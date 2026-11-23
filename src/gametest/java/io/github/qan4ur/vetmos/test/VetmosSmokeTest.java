@@ -26,12 +26,23 @@ public class VetmosSmokeTest implements FabricClientGameTest {
             sp.getServer().runCommand("effect give @a minecraft:speed 600 1");
             sp.getServer().runCommand("effect give @a minecraft:absorption 600 1");
             sp.getServer().runCommand("summon minecraft:zombie ~ ~ ~3 {NoAI:1b}");
+            sp.getServer().runCommand("scoreboard objectives add vt dummy \"Vetmos PvP\"");
+            sp.getServer().runCommand("scoreboard objectives setdisplay sidebar vt");
+            sp.getServer().runCommand("scoreboard players set Player0 vt 12");
+            sp.getServer().runCommand("scoreboard players set Kills vt 5");
+            sp.getServer().runCommand("bossbar add vt \"Ender Dragon\"");
+            sp.getServer().runCommand("bossbar set vt players @a");
+            sp.getServer().runCommand("bossbar set vt value 60");
             context.waitTicks(20);
 
             context.runOnClient(client -> {
                 for (Module m : ModuleManager.all()) m.setEnabled(true);
             });
             context.waitTicks(40);
+            sp.getServer().runCommand("title @a times 0 200 20");
+            sp.getServer().runCommand("title @a title \"Vetmos\"");
+            sp.getServer().runCommand("title @a subtitle \"1.2.0\"");
+            context.waitTicks(10);
             context.takeScreenshot("vetmos-1-all-modules");
 
             sp.getServer().runCommand("damage @p 13 minecraft:generic");
@@ -49,6 +60,14 @@ public class VetmosSmokeTest implements FabricClientGameTest {
             context.setScreen(() -> new HudEditorScreen(null));
             context.waitTicks(30);
             context.takeScreenshot("vetmos-5-hud-editor");
+
+            context.runOnClient(client -> {
+                io.github.qan4ur.vetmos.macro.MacroManager.add(io.github.qan4ur.vetmos.util.Keys.parse("g"), "/spawn", 3.0);
+                io.github.qan4ur.vetmos.macro.MacroManager.add(io.github.qan4ur.vetmos.util.Keys.parse("h"), "gg", 10.0);
+            });
+            context.setScreen(() -> new ClickGuiScreen(null, ModuleManager.get(io.github.qan4ur.vetmos.modules.client.MacrosModule.class)));
+            context.waitTicks(30);
+            context.takeScreenshot("vetmos-5b-macros");
 
             // English UI with a purple gradient accent
             context.runOnClient(client -> {

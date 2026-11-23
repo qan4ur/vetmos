@@ -17,6 +17,7 @@ public final class Modules {
         ModuleManager.register(new KillEffect());
         ModuleManager.register(new TotemPopCounter());
         ModuleManager.register(new HitSounds());
+        ModuleManager.register(new DamageNumbers());
 
         // HUD
         ModuleManager.register(new ArmorHud());
@@ -27,6 +28,10 @@ public final class Modules {
         ModuleManager.register(new ComboCounter());
         ModuleManager.register(new Keystrokes());
         ModuleManager.register(new LowHpWarning());
+        ModuleManager.register(new io.github.qan4ur.vetmos.modules.hud.vanilla.ScoreboardHud());
+        ModuleManager.register(new io.github.qan4ur.vetmos.modules.hud.vanilla.BossBarHud());
+        ModuleManager.register(new io.github.qan4ur.vetmos.modules.hud.vanilla.TitlesHud());
+        ModuleManager.register(new io.github.qan4ur.vetmos.modules.hud.vanilla.ActionBarHud());
         ModuleManager.register(new ItemCounter());
         ModuleManager.register(new io.github.qan4ur.vetmos.modules.hud.info.FpsHud());
         ModuleManager.register(new io.github.qan4ur.vetmos.modules.hud.info.PingHud());
@@ -43,6 +48,8 @@ public final class Modules {
         ModuleManager.register(new NoHurtCam());
         ModuleManager.register(new LowFire());
         ModuleManager.register(new LowShield());
+        ModuleManager.register(new Zoom());
+        ModuleManager.register(new Hitboxes());
 
         // Клиент
         ModuleManager.register(new io.github.qan4ur.vetmos.modules.client.InterfaceModule());

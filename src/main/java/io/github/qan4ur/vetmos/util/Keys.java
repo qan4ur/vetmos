@@ -26,11 +26,12 @@ public final class Keys {
     public static String name(int key) {
         if (key == NONE) return "none";
         if (isMouse(key)) return "mouse" + (key - MOUSE_OFFSET + 1);
-        String glfw = GLFW.glfwGetKeyName(key, 0);
-        if (glfw != null && !glfw.isBlank()) return glfw.toUpperCase(Locale.ROOT);
+        // Layout-independent names (G stays G on a Russian keyboard)
         InputUtil.Key k = InputUtil.Type.KEYSYM.createFromCode(key);
         String translation = k.getTranslationKey();
         if (translation.startsWith("key.keyboard.")) return translation.substring("key.keyboard.".length()).toUpperCase(Locale.ROOT);
+        String glfw = GLFW.glfwGetKeyName(key, 0);
+        if (glfw != null && !glfw.isBlank()) return glfw.toUpperCase(Locale.ROOT);
         return String.valueOf(key);
     }
 

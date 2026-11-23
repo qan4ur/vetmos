@@ -111,6 +111,38 @@ public final class GuiLang {
         ui("reset-positions", "Reset positions");
         ui("reset-positions-desc", "Move all HUD elements back to their default places.");
 
+        // macros editor
+        ui("macros-tab", "Macros");
+        ui("macro-add", "Add macro");
+        ui("macro-empty", "A macro sends text when you press a key. Three kinds of text:");
+        ui("macro-empty-chat", "Hi all! - a chat message");
+        ui("macro-empty-cmd", "/spawn - a server command");
+        ui("macro-empty-vetmos", ".toggle zoom - a Vetmos command");
+        ui("macro-text-ph", "Hi! or /spawn or .toggle zoom");
+        ui("macro-name-ph", "Name (optional)");
+        ui("macro-on", "The macro is on - click to turn it off.");
+        ui("macro-off", "The macro is off - click to turn it on.");
+        ui("macro-test", "test");
+        ui("macro-test-desc", "Send the macro now (the cooldown applies).");
+        ui("macro-test-noworld", "Join a world to test the macro");
+        ui("macro-sent", "Macro sent");
+        ui("macro-on-cooldown", "The macro is on cooldown");
+        ui("macro-delete", "Delete macro");
+        ui("macro-delete-confirm", "Delete this macro?");
+        ui("macro-kind-chat", "chat");
+        ui("macro-kind-cmd", "command");
+        ui("macro-cooldown-label", "Cooldown");
+        ui("macro-cooldown-desc", "Pause between uses (0-60 s). Click the number to type an exact value; Shift + wheel - 0.1 steps.");
+        ui("seconds-short", "s");
+        ui("macro-warn-empty", "Empty text - the macro won't send anything.");
+        ui("macro-warn-nokey", "No key bound.");
+        ui("macro-warn-dup", "Another macro uses this key - both will fire.");
+        ui("macro-warn-module", "This key also toggles the module");
+        ui("macro-howto-1", "1. Click \"+ Add macro\".");
+        ui("macro-howto-2", "2. Bind a key or mouse button.");
+        ui("macro-howto-3", "3. Type the text: a message, a /server command or a .Vetmos command.");
+        ui("macro-howto-4", "4. Press the key in game (menu closed). ▶ test sends it right away.");
+
         // GUI-side hooks (welcome guide on the first world join). Registered here because this is the GUI's only
         // entry point called at startup.
     }

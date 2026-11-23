@@ -33,7 +33,7 @@ public class DirectionHud extends InfoHudModule {
 
     @Override
     public HudPosition defaultHudPosition() {
-        return new HudPosition(HudPosition.AnchorX.CENTER, HudPosition.AnchorY.TOP, 0, 4);
+        return new HudPosition(HudPosition.AnchorX.CENTER, HudPosition.AnchorY.TOP, 0, 26);
     }
 
     /** 0 = north, 90 = east, 180 = south, 270 = west. */

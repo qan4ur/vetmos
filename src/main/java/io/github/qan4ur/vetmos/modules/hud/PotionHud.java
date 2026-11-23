@@ -107,7 +107,7 @@ public class PotionHud extends Module implements HudModule {
 
     @Override
     public HudPosition defaultHudPosition() {
-        return new HudPosition(HudPosition.AnchorX.RIGHT, HudPosition.AnchorY.CENTER, -4, 0);
+        return new HudPosition(HudPosition.AnchorX.LEFT, HudPosition.AnchorY.CENTER, 4, 0);
     }
 
     @Override

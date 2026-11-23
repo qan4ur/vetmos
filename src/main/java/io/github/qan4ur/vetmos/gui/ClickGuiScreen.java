@@ -385,6 +385,8 @@ public class ClickGuiScreen extends Screen {
             BarButton anchor = pop == palette ? paletteBtn : profileBtn;
             if (Paint.inside(mx, my, anchor.x, anchor.y, anchor.w, anchor.h)) return true; // the click closed it
         }
+        boolean inWindow = window != null && window.isOver(mx, my);
+        if (window != null && !inWindow) window.blurInputs();
         for (BarButton b : barButtons) if (b.click(mx, my, button)) return true;
         if (search.mouseClicked(mx, my, button)) {
             if (window != null) window.search.setFocused(false);
@@ -442,11 +444,12 @@ public class ClickGuiScreen extends Screen {
     }
 
     /** The text field that receives typing right now, or null. */
-    private SearchField typingTarget() {
+    private TextInput typingTarget() {
+        if (window != null && !window.isClosing() && window.focusedInput() != null) return window.focusedInput();
         Popover pop = openPopover();
         if (pop != null && pop.focusedField() != null) return pop.focusedField();
         if (window != null && !window.isClosing()) {
-            if (window.search.isFocused() || !search.isFocused()) return window.search;
+            if (window.search.isFocused() || (!search.isFocused() && !window.onMacroTab())) return window.search;
         }
         return search;
     }
@@ -465,7 +468,14 @@ public class ClickGuiScreen extends Screen {
             return true;
         }
         Popover pop = openPopover();
-        SearchField target = typingTarget();
+        TextInput target = typingTarget();
+
+        // a macro field is focused: it takes every key; Esc only unfocuses it (no module binds, no closing)
+        if (target instanceof TextField tf && tf.isFocused()) {
+            if (keyCode == GLFW.GLFW_KEY_ESCAPE) tf.setFocused(false);
+            else tf.keyPressed(keyCode);
+            return true;
+        }
 
         if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
             if (pop != null) {
@@ -515,7 +525,8 @@ public class ClickGuiScreen extends Screen {
             return true;
         }
         if (closing || KeybindWidget.listening != null || welcome.isOpen()) return true;
-        SearchField target = typingTarget();
+        TextInput target = typingTarget();
+        if (target instanceof TextField) return target.charTyped(chr);
         if (chr == ' ' && target.text().isEmpty()) return true;
         Popover pop = openPopover();
         if (pop != null && pop.focusedField() == null) return true; // don't type into hidden fields under a popover

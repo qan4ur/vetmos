@@ -14,7 +14,10 @@ public class KeybindWidget extends Widget {
     /** The widget currently waiting for a key, if any. */
     static KeybindWidget listening;
 
-    private final Module module;
+    private final java.util.function.IntSupplier getter;
+    private final java.util.function.IntConsumer setter;
+    /** In compact mode: prefix the key with "Клавиша:". */
+    public boolean showLabel = true;
     private float listen;
     private float flash;
 
@@ -22,7 +25,13 @@ public class KeybindWidget extends Widget {
     public boolean compact;
 
     public KeybindWidget(Module module) {
-        this.module = module;
+        this(module::getKey, module::setKey);
+    }
+
+    /** Generic bind (e.g. a macro key). */
+    public KeybindWidget(java.util.function.IntSupplier getter, java.util.function.IntConsumer setter) {
+        this.getter = getter;
+        this.setter = setter;
     }
 
     /** Width the compact box wants for the current key. */
@@ -31,11 +40,11 @@ public class KeybindWidget extends Widget {
     }
 
     private String keyName() {
-        return isListening() ? "..." : module.getKey() == Keys.NONE ? Lang.ui("key-none", "нет") : Keys.name(module.getKey());
+        return isListening() ? "..." : getter.getAsInt() == Keys.NONE ? Lang.ui("key-none", "нет") : Keys.name(getter.getAsInt());
     }
 
     private String boxText() {
-        return compact ? Lang.ui("key", "Клавиша") + ": " + keyName() : keyName();
+        return compact && showLabel ? Lang.ui("key", "Клавиша") + ": " + keyName() : keyName();
     }
 
     @Override
@@ -65,7 +74,7 @@ public class KeybindWidget extends Widget {
         if (listen > 0.02f) Paint.glow(ctx, bx, by, boxW, bh, 3, Anim.alpha(Palette.glow(), listen * (0.5f + pulse * 0.5f)), 3);
         Paint.round(ctx, bx, by, boxW, bh, 3, Anim.mix(Palette.CONTROL, Anim.mix(Palette.CONTROL_HOVER, Palette.accentDim(), 0.5f), Math.max(listen, flash)));
         Paint.outline(ctx, bx, by, boxW, bh, 3, Anim.mix(Anim.mix(Palette.CONTROL_LINE, Palette.CONTROL_LINE_HOVER, hover), Palette.accent(), Math.max(listen * (0.6f + 0.4f * pulse), flash)));
-        int textColor = module.getKey() == Keys.NONE && !isListening() ? Palette.TEXT_MUTED : Palette.TEXT;
+        int textColor = getter.getAsInt() == Keys.NONE && !isListening() ? Palette.TEXT_MUTED : Palette.TEXT;
         Paint.textCentered(ctx, keyName, bx + boxW / 2, y + 4, textColor);
 
         if (hov) {
@@ -102,7 +111,7 @@ public class KeybindWidget extends Widget {
     }
 
     private void bind(int key) {
-        module.setKey(key);
+        setter.accept(key);
         listening = null;
         flash = 1;
         click(1.5f);

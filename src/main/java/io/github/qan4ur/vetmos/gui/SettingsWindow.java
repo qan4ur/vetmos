@@ -39,6 +39,9 @@ public class SettingsWindow {
     private final Map<String, GroupHeader> headers = new HashMap<>();
     private final List<HeaderButton> buttons = new ArrayList<>();
     private final KeybindWidget keybind;
+    /** Custom editor of the Macros module (its own first tab), or null. */
+    private final MacroEditor macroEditor;
+    private static final String MACRO_TAB = "#macros";
     private final ButtonWidget resetPosition;
     final SearchField search = new SearchField();
     private int tab;
@@ -72,6 +75,13 @@ public class SettingsWindow {
             SettingWidget<?> sw = create(s);
             if (sw != null) byGroup.get(g).add(new DescribedWidget(sw));
         }
+        if (module instanceof io.github.qan4ur.vetmos.modules.client.MacrosModule mm) {
+            macroEditor = new MacroEditor(mm);
+            groups.add(0, MACRO_TAB);
+            byGroup.put(MACRO_TAB, new ArrayList<>(List.of(macroEditor)));
+        } else {
+            macroEditor = null;
+        }
         tabHover = new float[groups.size()];
         tab = Math.min(LAST_TAB.getOrDefault(module.name, 0), Math.max(0, groups.size() - 1));
 
@@ -102,6 +112,7 @@ public class SettingsWindow {
     }
 
     public void close() {
+        blurInputs();
         open.set(false);
         dragging = false;
         if (KeybindWidget.listening == keybind) KeybindWidget.listening = null;
@@ -175,7 +186,22 @@ public class SettingsWindow {
         return list;
     }
 
+    /** The focused macro text field, if any (gets keyboard input before everything else). */
+    public TextInput focusedInput() {
+        return macroEditor != null && open.on() ? macroEditor.focused() : null;
+    }
+
+    /** The macro editor tab is shown (typing then doesn't auto-focus the settings search). */
+    public boolean onMacroTab() {
+        return macroEditor != null && search.text().isBlank() && !groups.isEmpty() && MACRO_TAB.equals(groups.get(tab));
+    }
+
+    public void blurInputs() {
+        if (macroEditor != null) macroEditor.blurAll();
+    }
+
     private String groupTitle(String g) {
+        if (MACRO_TAB.equals(g)) return Lang.ui("macros-tab", "Макросы");
         List<Widget> list = byGroup.get(g);
         for (Widget wd : list) if (wd instanceof DescribedWidget dw) return dw.inner.setting().displayGroup();
         return g;
@@ -364,7 +390,8 @@ public class SettingsWindow {
 
     private void renderPreview(DrawContext ctx, int mx, int my, Tooltip tip, int px, int py, int pw, int ph) {
         int boxH = Math.min(ph - (resetPosition != null ? 22 : 0), Math.max(70, ph * 3 / 5));
-        if (resetPosition == null) boxH = Math.min(boxH, 92);
+        if (resetPosition == null && macroEditor == null) boxH = Math.min(boxH, 92);
+        if (macroEditor != null) boxH = Math.min(ph - 24, 160);
         Paint.round(ctx, px, py, pw, boxH, 4, 0xFF080808);
         // faint grid
         for (int gx = px + 8; gx < px + pw; gx += 8) Paint.rect(ctx, gx, py + 1, 1, boxH - 2, 0x08FFFFFF);
@@ -395,6 +422,8 @@ public class SettingsWindow {
             resetPosition.y = py + boxH + 3;
             resetPosition.w = pw;
             resetPosition.render(ctx, mx, my, tip);
+        } else if (macroEditor != null) {
+            renderMacroHowTo(ctx, px, py, pw, boxH);
         } else {
             // placeholder: a big category glyph, the state and the module's colours
             float pulse = 0.5f + 0.5f * (float) Math.sin(time * 2);
@@ -440,10 +469,36 @@ public class SettingsWindow {
         }
     }
 
+    private void renderMacroHowTo(DrawContext ctx, int px, int py, int pw, int boxH) {
+        String[] steps = {
+            Lang.ui("macro-howto-1", "1. «+ Добавить макрос»."),
+            Lang.ui("macro-howto-2", "2. Назначьте клавишу или кнопку мыши."),
+            Lang.ui("macro-howto-3", "3. Впишите текст: сообщение, /команду сервера или .команду Vetmos."),
+            Lang.ui("macro-howto-4", "4. Нажмите клавишу в игре (меню закрыто). ▶ тест — отправить сразу."),
+        };
+        int ty = py + 12;
+        var m = ctx.getMatrices();
+        for (String st : steps) {
+            for (OrderedText line : Paint.font().wrapLines(StringVisitable.plain(st), Math.round((pw - 10) / 0.7f))) {
+                if (ty + 7 > py + boxH - 2) return;
+                m.pushMatrix();
+                m.translate(px + 5, ty);
+                m.scale(0.7f, 0.7f);
+                int c = Paint.a(Palette.TEXT_SECONDARY);
+                if ((c >>> 24) >= 4) ctx.drawText(Paint.font(), line, 0, 0, c, false);
+                m.popMatrix();
+                ty += 7;
+            }
+            ty += 3;
+        }
+    }
+
     // ---------------------------------------------------------------- input
 
     public boolean mouseClicked(double mx, double my, int button) {
         if (!open.on() || !Paint.inside(mx, my, x, y, w, h)) return false;
+        if (macroEditor != null && !(visible.contains(macroEditor) && macroEditor.isHovered(mx, my)
+            && Paint.inside(mx, my, listX - 2, listY, listW + 4, listH))) macroEditor.blurAll();
         for (HeaderButton b : buttons) if (b.click(mx, my, button)) return true;
         if (keybind.mouseClicked(mx, my, button)) return true;
         if (button == 0 && Paint.inside(mx, my, switchX - 2, switchY - 3, 22, 14)) {

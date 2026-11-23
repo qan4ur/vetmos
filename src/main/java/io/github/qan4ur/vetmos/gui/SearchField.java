@@ -7,7 +7,7 @@ import net.minecraft.util.StringHelper;
 import org.lwjgl.glfw.GLFW;
 
 /** Minimal one-line text field for the module search (works with any keyboard layout via charTyped). */
-public class SearchField {
+public class SearchField implements TextInput {
     /** Placeholder shown while empty (a supplier so it follows the language). */
     public java.util.function.Supplier<String> placeholder = () -> io.github.qan4ur.vetmos.util.Lang.ui("search-modules", "Поиск модулей…");
     public int maxLen = 32;

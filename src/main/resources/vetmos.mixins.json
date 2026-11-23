@@ -4,10 +4,12 @@
   "package": "io.github.qan4ur.vetmos.mixin",
   "compatibilityLevel": "JAVA_21",
   "client": [
+    "BossBarHudBarsAccessor",
     "ChatTweaksChatHudMixin",
     "ClientPlayNetworkHandlerMixin",
     "GlintTextureManagerMixin",
     "HitColorOverlayAccessor",
+    "HitboxesEntityRenderDispatcherMixin",
     "KeyboardMixin",
     "KeystrokesMouseMixin",
     "LowFireOverlayMixin",
@@ -18,7 +20,10 @@
     "SkyFogRendererMixin",
     "SwingHeldItemRendererMixin",
     "SwingLivingEntityMixin",
-    "WorldBorderRenderingMixin"
+    "TitlesInGameHudAccessor",
+    "WorldBorderRenderingMixin",
+    "ZoomGameRendererMixin",
+    "ZoomMouseMixin"
   ],
   "injectors": {
     "defaultRequire": 1
