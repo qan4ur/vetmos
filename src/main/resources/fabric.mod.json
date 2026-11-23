@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "vetmos",
+  "version": "${version}",
+  "name": "Vetmos",
+  "description": "Legit client-side visual mod for PvP in a blood-moon red style: custom crosshair, Target HUD, hit effects, HUD panels and world visuals. No cheats - only what vanilla already shows, drawn nicer.",
+  "authors": ["qan4ur"],
+  "contact": {
+    "homepage": "https://github.com/qan4ur/vetmos",
+    "sources": "https://github.com/qan4ur/vetmos",
+    "issues": "https://github.com/qan4ur/vetmos/issues"
+  },
+  "license": "MIT",
+  "icon": "assets/vetmos/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["io.github.qan4ur.vetmos.Vetmos"]
+  },
+  "mixins": ["vetmos.mixins.json"],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "minecraft": "~1.21.7",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
