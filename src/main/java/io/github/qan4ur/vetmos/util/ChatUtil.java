@@ -36,7 +36,7 @@ public final class ChatUtil {
     }
 
     public static void moduleToggled(Module module) {
-        send(Text.literal(module.title + " ").formatted(Formatting.WHITE)
+        send(Text.literal(module.displayTitle() + " ").formatted(Formatting.WHITE)
             .append(module.isEnabled()
                 ? Text.literal("ВКЛ").withColor(Theme.accent() & 0xFFFFFF).formatted(Formatting.BOLD)
                 : Text.literal("ВЫКЛ").formatted(Formatting.DARK_GRAY, Formatting.BOLD)));

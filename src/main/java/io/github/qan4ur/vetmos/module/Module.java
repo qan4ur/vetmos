@@ -46,9 +46,22 @@ public abstract class Module {
         this.key = defaultKey;
     }
 
+    // ---------------------------------------------------------------- display (language aware)
+
+    /** Title in the selected interface language. Always use this in the GUI / chat. */
+    public String displayTitle() {
+        return io.github.qan4ur.vetmos.util.Lang.tr(name, title);
+    }
+
+    /** Description in the selected interface language. */
+    public String displayDescription() {
+        return io.github.qan4ur.vetmos.util.Lang.tr(name + "#desc", description);
+    }
+
     // ---------------------------------------------------------------- settings
 
     protected <S extends Setting<?>> S add(S setting) {
+        setting.owner = name;
         settings.add(setting);
         return setting;
     }

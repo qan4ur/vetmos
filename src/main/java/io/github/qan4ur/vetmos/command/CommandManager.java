@@ -38,6 +38,8 @@ public final class CommandManager {
                 case "settings", "set", "s" -> settings(rest);
                 case "reset" -> reset(rest);
                 case "modules", "list" -> modules();
+                case "profile", "profiles", "p" -> profile(rest);
+                case "config", "cfg" -> config(rest);
                 case "gui" -> Vetmos.openScreenNextTick(Vetmos.createClickGui());
                 case "hud" -> Vetmos.openScreenNextTick(Vetmos.createHudEditor());
                 default -> ChatUtil.error("Unknown command '" + cmd + "'. Type " + PREFIX + "help");
@@ -65,6 +67,8 @@ public final class CommandManager {
         line(".reset <module>", "reset a module's settings to defaults");
         line(".reset bind <module> | .reset hud [module] | .reset all", "");
         line(".modules", "list modules");
+        line(".profile [list|<name>|create <name>|delete <name>]", "settings profiles");
+        line(".config export | .config import [code]", "share settings with a code (clipboard)");
         line(".gui / .hud", "open ClickGUI / HUD editor");
     }
 
@@ -190,6 +194,59 @@ public final class CommandManager {
                 m.resetSettings();
                 ChatUtil.info("Reset settings of " + m.title);
             }
+        }
+    }
+
+    private static void profile(String[] args) {
+        if (args.length == 0 || args[0].equalsIgnoreCase("list")) {
+            MutableText t = Text.literal("Профили: ").formatted(Formatting.GRAY);
+            boolean first = true;
+            for (String p : io.github.qan4ur.vetmos.config.ConfigManager.listProfiles()) {
+                if (!first) t.append(Text.literal(", ").formatted(Formatting.DARK_GRAY));
+                boolean cur = p.equalsIgnoreCase(io.github.qan4ur.vetmos.config.ConfigManager.currentProfile());
+                t.append(cur ? Text.literal(p).withColor(Theme.accent() & 0xFFFFFF) : Text.literal(p).formatted(Formatting.WHITE));
+                first = false;
+            }
+            ChatUtil.send(t);
+            return;
+        }
+        String sub = args[0].toLowerCase();
+        String name = args.length > 1 ? String.join(" ", Arrays.copyOfRange(args, 1, args.length)) : null;
+        switch (sub) {
+            case "create", "new" -> {
+                if (name == null || !io.github.qan4ur.vetmos.config.ConfigManager.createProfile(name, true)) ChatUtil.error("Не удалось создать профиль (имя занято или некорректно)");
+                else ChatUtil.info("Профиль '" + name + "' создан (копия текущего)");
+            }
+            case "delete", "remove" -> {
+                if (name == null || !io.github.qan4ur.vetmos.config.ConfigManager.deleteProfile(name)) ChatUtil.error("Не удалось удалить профиль (текущий удалить нельзя)");
+                else ChatUtil.info("Профиль '" + name + "' удалён");
+            }
+            default -> {
+                String target = String.join(" ", args);
+                if (io.github.qan4ur.vetmos.config.ConfigManager.switchProfile(target)) ChatUtil.info("Профиль: " + target);
+                else ChatUtil.error("Некорректное имя профиля");
+            }
+        }
+    }
+
+    private static void config(String[] args) {
+        if (args.length == 0) {
+            ChatUtil.error("Использование: .config export | .config import [код]");
+            return;
+        }
+        net.minecraft.client.MinecraftClient mc = net.minecraft.client.MinecraftClient.getInstance();
+        switch (args[0].toLowerCase()) {
+            case "export" -> {
+                String code = io.github.qan4ur.vetmos.config.ConfigManager.exportCode();
+                mc.keyboard.setClipboard(code);
+                ChatUtil.info("Код настроек скопирован в буфер обмена (" + code.length() + " символов). Отправь его другу.");
+            }
+            case "import" -> {
+                String code = args.length > 1 ? args[1] : mc.keyboard.getClipboard();
+                if (io.github.qan4ur.vetmos.config.ConfigManager.importCode(code)) ChatUtil.info("Настройки импортированы в профиль '" + io.github.qan4ur.vetmos.config.ConfigManager.currentProfile() + "'");
+                else ChatUtil.error("Неверный код настроек");
+            }
+            default -> ChatUtil.error("Использование: .config export | .config import [код]");
         }
     }
 

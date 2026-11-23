@@ -13,6 +13,8 @@ public abstract class Setting<T> {
     /** Tooltip (Russian). */
     public final String description;
     public final String group;
+    /** Name of the module that owns this setting (set when added). */
+    public String owner = "";
     protected final T defaultValue;
     protected T value;
     private BooleanSupplier visible = () -> true;
@@ -25,6 +27,21 @@ public abstract class Setting<T> {
         this.group = group;
         this.defaultValue = defaultValue;
         this.value = defaultValue;
+    }
+
+    /** Title in the selected interface language. */
+    public String displayTitle() {
+        return io.github.qan4ur.vetmos.util.Lang.tr(owner + "." + name, title);
+    }
+
+    /** Description in the selected interface language. */
+    public String displayDescription() {
+        return io.github.qan4ur.vetmos.util.Lang.tr(owner + "." + name + "#desc", description);
+    }
+
+    /** Group title in the selected interface language. */
+    public String displayGroup() {
+        return io.github.qan4ur.vetmos.util.Lang.tr("group:" + group, group);
     }
 
     public T get() {
