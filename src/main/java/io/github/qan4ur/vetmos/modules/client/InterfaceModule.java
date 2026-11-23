@@ -35,6 +35,8 @@ public class InterfaceModule extends Module {
         "Второй цвет градиента.", 0xFF8A8A8A).visibleWhen(gradient::get);
     public final DoubleSetting gradientSpeed = decimal("Акцент", "gradient-speed", "Скорость градиента",
         "Скорость переливания градиента (0 = статичный).", 1.0, 0.0, 5.0, 1).visibleWhen(gradient::get);
+    public final BoolSetting customFont = bool("Основное", "custom-font", "Чистый шрифт",
+        "Современный шрифт (Fira Sans) в меню Vetmos вместо пиксельного шрифта Minecraft.", true);
     public final BoolSetting chatAccent = bool("Основное", "chat-accent", "Цвет префикса в чате",
         "Красить префикс [Vetmos] в чате акцентным цветом (иначе белый).", true);
 
