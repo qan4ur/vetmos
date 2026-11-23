@@ -12,8 +12,13 @@ public final class ChatUtil {
 
     public static MutableText prefix() {
         return Text.literal("[").formatted(Formatting.DARK_GRAY)
-            .append(Text.literal("Vetmos").withColor(Theme.SCARLET & 0xFFFFFF))
+            .append(Text.literal("Vetmos").withColor(prefixColor()))
             .append(Text.literal("] ").formatted(Formatting.DARK_GRAY));
+    }
+
+    private static int prefixColor() {
+        io.github.qan4ur.vetmos.modules.client.InterfaceModule ui = io.github.qan4ur.vetmos.module.ModuleManager.get(io.github.qan4ur.vetmos.modules.client.InterfaceModule.class);
+        return (ui == null || ui.chatAccent.get() ? Theme.accent() : Theme.WHITE) & 0xFFFFFF;
     }
 
     public static void send(Text text) {
@@ -33,7 +38,7 @@ public final class ChatUtil {
     public static void moduleToggled(Module module) {
         send(Text.literal(module.title + " ").formatted(Formatting.WHITE)
             .append(module.isEnabled()
-                ? Text.literal("ON").withColor(Theme.SCARLET_BRIGHT & 0xFFFFFF).formatted(Formatting.BOLD)
-                : Text.literal("OFF").formatted(Formatting.DARK_GRAY, Formatting.BOLD)));
+                ? Text.literal("ВКЛ").withColor(Theme.accent() & 0xFFFFFF).formatted(Formatting.BOLD)
+                : Text.literal("ВЫКЛ").formatted(Formatting.DARK_GRAY, Formatting.BOLD)));
     }
 }

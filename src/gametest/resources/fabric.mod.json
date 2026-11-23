@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "vetmos-test",
+  "version": "1.0.0",
+  "name": "Vetmos smoke test",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-client-gametest": ["io.github.qan4ur.vetmos.test.VetmosSmokeTest"]
+  },
+  "depends": { "vetmos": "*" }
+}

@@ -5,8 +5,16 @@
   "compatibilityLevel": "JAVA_21",
   "client": [
     "ClientPlayNetworkHandlerMixin",
+    "GlintTextureManagerMixin",
+    "HitColorOverlayAccessor",
     "KeyboardMixin",
-    "MouseMixin"
+    "KeystrokesMouseMixin",
+    "MouseMixin",
+    "SkyClientWorldMixin",
+    "SkyFogRendererMixin",
+    "SwingHeldItemRendererMixin",
+    "SwingLivingEntityMixin",
+    "WorldBorderRenderingMixin"
   ],
   "injectors": {
     "defaultRequire": 1

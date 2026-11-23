@@ -4,7 +4,8 @@ public enum Category {
     COMBAT("Бой"),
     HUD("HUD"),
     RENDER("Рендер"),
-    WORLD("Мир");
+    WORLD("Мир"),
+    CLIENT("Клиент");
 
     public final String title;
 

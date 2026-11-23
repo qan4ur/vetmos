@@ -69,7 +69,7 @@ public final class CommandManager {
     }
 
     private static void line(String usage, String description) {
-        MutableText t = Text.literal(usage).withColor(Theme.SCARLET_BRIGHT & 0xFFFFFF);
+        MutableText t = Text.literal(usage).withColor(Theme.accent() & 0xFFFFFF);
         if (!description.isEmpty()) t.append(Text.literal(" - " + description).formatted(Formatting.GRAY));
         ChatUtil.send(t);
     }
@@ -120,7 +120,7 @@ public final class CommandManager {
         if (args.length == 1) {
             ChatUtil.info(m.title + " settings:");
             for (Setting<?> s : m.getSettings()) {
-                ChatUtil.send(Text.literal(s.name).withColor(Theme.SCARLET_BRIGHT & 0xFFFFFF)
+                ChatUtil.send(Text.literal(s.name).withColor(Theme.accent() & 0xFFFFFF)
                     .append(Text.literal(" = " + s.asString()).formatted(Formatting.WHITE))
                     .append(Text.literal("  (" + s.description + ")").formatted(Formatting.DARK_GRAY)));
             }
@@ -195,7 +195,7 @@ public final class CommandManager {
 
     private static void modules() {
         for (Category c : Category.values()) {
-            MutableText t = Text.literal(c.title + ": ").withColor(Theme.SCARLET & 0xFFFFFF);
+            MutableText t = Text.literal(c.title + ": ").withColor(Theme.accent() & 0xFFFFFF);
             boolean first = true;
             for (Module m : ModuleManager.inCategory(c)) {
                 if (!first) t.append(Text.literal(", ").formatted(Formatting.DARK_GRAY));

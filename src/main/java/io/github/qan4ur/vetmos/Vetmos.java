@@ -40,11 +40,20 @@ public class Vetmos implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        if (net.fabricmc.loader.api.FabricLoader.getInstance().isDevelopmentEnvironment()) {
+            // Force-apply every mixin once the client is up, so wrong targets show up immediately in dev.
+            ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
+                LOG.info("Auditing mixins (dev environment)");
+                org.spongepowered.asm.mixin.MixinEnvironment.getCurrentEnvironment().audit();
+                LOG.info("Mixin audit finished");
+            });
+        }
+
         Modules.registerAll();
         ConfigManager.load();
         for (Module m : ModuleManager.all()) ModuleManager.safe(m, m::onInit);
 
-        openGuiKey = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.vetmos.open_gui", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_RIGHT_SHIFT, "key.categories.vetmos"));
+        openGuiKey = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.vetmos.open_gui", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_RIGHT_CONTROL, "key.categories.vetmos"));
 
         HudElementRegistry.addLast(id("hud"), HudManager::render);
 

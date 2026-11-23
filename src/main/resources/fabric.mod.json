@@ -3,7 +3,7 @@
   "id": "vetmos",
   "version": "${version}",
   "name": "Vetmos",
-  "description": "Legit client-side visual mod for PvP in a blood-moon red style: custom crosshair, Target HUD, hit effects, HUD panels and world visuals. No cheats - only what vanilla already shows, drawn nicer.",
+  "description": "Legit client-side visual mod for PvP in a clean black & white style with a configurable accent colour: custom crosshair, Target HUD, hit effects, HUD panels and world visuals. No cheats - only what vanilla already shows, drawn nicer.",
   "authors": ["qan4ur"],
   "contact": {
     "homepage": "https://github.com/qan4ur/vetmos",

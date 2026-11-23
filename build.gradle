@@ -43,3 +43,14 @@ jar {
         rename { "${it}_${project.archives_base_name}" }
     }
 }
+
+// Automated in-game smoke test: `gradlew runClientGameTest` creates a world, enables the modules and takes screenshots.
+fabricApi {
+    configureTests {
+        createSourceSet = true
+        modId = "vetmos-test"
+        enableGameTests = false
+        enableClientGameTests = true
+        eula = true
+    }
+}
