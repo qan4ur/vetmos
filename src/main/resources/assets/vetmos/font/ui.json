@@ -1,0 +1,22 @@
+{
+    "providers": [
+        {
+            "type": "space",
+            "advances": {
+                " ": 3,
+                "\u200c": 0
+            }
+        },
+        {
+            "type": "ttf",
+            "file": "vetmos:fira_sans_regular.ttf",
+            "size": 9.5,
+            "oversample": 6.0,
+            "shift": [0.0, 0.0]
+        },
+        {
+            "type": "reference",
+            "id": "minecraft:default"
+        }
+    ]
+}
