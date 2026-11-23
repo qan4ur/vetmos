@@ -53,6 +53,9 @@ public final class Lang {
         LangEn.register();        // existing modules, groups, categories, chat/commands
         LangEnInfo.register();    // info HUD + item counter modules
         LangEnTweaks.register();  // combat / chat tweak modules
+        LangEnCombat.register();  // damage numbers, hitboxes
+        LangEnVanilla.register(); // movable vanilla HUD (scoreboard, boss bar, titles)
+        LangEnZoom.register();    // zoom
         io.github.qan4ur.vetmos.gui.GuiLang.register(); // fixed GUI strings (ui:...)
     }
 }
