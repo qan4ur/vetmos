@@ -93,7 +93,7 @@ public class ClickGuiScreen extends Screen {
                 panels.remove(targetPanel);
                 panels.add(targetPanel);
             }
-            window = new SettingsWindow(focus, false);
+            window = newWindow(focus, false);
         }
 
         if (!ConfigManager.isWelcomeShown()) {
@@ -122,7 +122,7 @@ public class ClickGuiScreen extends Screen {
         if (width > 0) layoutPanels();
         if (window != null && !window.isClosing()) {
             Module m = ModuleManager.get(window.module.name);
-            window = m != null ? new SettingsWindow(m, true) : null;
+            window = m != null ? newWindow(m, true) : null;
         }
     }
 
@@ -131,7 +131,7 @@ public class ClickGuiScreen extends Screen {
             window.close();
             return;
         }
-        window = new SettingsWindow(m, window != null && !window.isClosing());
+        window = newWindow(m, window != null && !window.isClosing());
         search.setFocused(false);
         palette.hide();
         profiles.hide();
@@ -154,7 +154,34 @@ public class ClickGuiScreen extends Screen {
     protected void init() {
         computeFit();
         layoutPanels();
+        if (animateNextOpen) {
+            // back from the single-element positioning mode: animate in again
+            animateNextOpen = false;
+            open.snap(false);
+        }
         if (!closing) open.set(true);
+    }
+
+    /** Module whose positioning mode opens once the close animation ends. */
+    private Module pendingMove;
+    private boolean animateNextOpen;
+
+    private SettingsWindow newWindow(Module m, boolean instant) {
+        SettingsWindow w = new SettingsWindow(m, instant);
+        w.moveAction = () -> startMove(m);
+        return w;
+    }
+
+    /** "Переместить" in a HUD module's settings window: fade the GUI out, then position just that element. */
+    private void startMove(Module m) {
+        if (closing) return;
+        KeybindWidget.listening = null;
+        palette.hide();
+        profiles.hide();
+        saveState();
+        pendingMove = m;
+        closing = true;
+        open.set(false);
     }
 
     private static int rowWidth(int panelsInRow) {
@@ -552,7 +579,15 @@ public class ClickGuiScreen extends Screen {
     }
 
     private void finishClose() {
-        if (client != null) client.setScreen(parent);
+        if (client == null) return;
+        if (pendingMove != null) {
+            Module m = pendingMove;
+            pendingMove = null;
+            animateNextOpen = true;
+            client.setScreen(new MoveElementScreen(this, m));
+            return;
+        }
+        client.setScreen(parent);
     }
 
     @Override

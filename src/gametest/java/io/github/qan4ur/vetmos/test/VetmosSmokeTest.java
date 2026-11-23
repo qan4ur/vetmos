@@ -11,6 +11,16 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContex
 
 /** Smoke test: every module enabled at once must not crash, and the screenshots show what is drawn. */
 public class VetmosSmokeTest implements FabricClientGameTest {
+    private static float fov(net.minecraft.client.MinecraftClient client) {
+        try {
+            java.lang.reflect.Method m = net.minecraft.client.render.GameRenderer.class.getDeclaredMethod("getFov", net.minecraft.client.render.Camera.class, float.class, boolean.class);
+            m.setAccessible(true);
+            return (float) m.invoke(client.gameRenderer, client.gameRenderer.getCamera(), 1f, true);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     @Override
     public void runTest(ClientGameTestContext context) {
         context.runOnClient(client -> io.github.qan4ur.vetmos.config.ConfigManager.setWelcomeShown(true));
@@ -45,6 +55,16 @@ public class VetmosSmokeTest implements FabricClientGameTest {
             context.waitTicks(10);
             context.takeScreenshot("vetmos-1-all-modules");
 
+            // Zoom: hold C (the default zoom key) — must work even though vanilla also binds C (save toolbar)
+            context.getInput().holdKey(net.minecraft.client.util.InputUtil.Type.KEYSYM.createFromCode(org.lwjgl.glfw.GLFW.GLFW_KEY_C));
+            context.waitTicks(20);
+            float zoomFov = context.computeOnClient(client -> fov(client));
+            context.takeScreenshot("vetmos-1b-zoom");
+            context.getInput().releaseKey(net.minecraft.client.util.InputUtil.Type.KEYSYM.createFromCode(org.lwjgl.glfw.GLFW.GLFW_KEY_C));
+            context.waitTicks(20);
+            float normalFov = context.computeOnClient(client -> fov(client));
+            if (!(zoomFov < normalFov * 0.6f)) throw new AssertionError("Zoom did not zoom: fov " + zoomFov + " vs " + normalFov);
+
             sp.getServer().runCommand("damage @p 13 minecraft:generic");
             context.waitTicks(30);
             context.takeScreenshot("vetmos-2-low-hp");
@@ -56,6 +76,10 @@ public class VetmosSmokeTest implements FabricClientGameTest {
             context.setScreen(() -> new ClickGuiScreen(null, ModuleManager.get(CustomCrosshair.class)));
             context.waitTicks(30);
             context.takeScreenshot("vetmos-4-clickgui-crosshair");
+
+            context.setScreen(() -> new io.github.qan4ur.vetmos.gui.MoveElementScreen(null, ModuleManager.get(io.github.qan4ur.vetmos.modules.hud.vanilla.ScoreboardHud.class)));
+            context.waitTicks(20);
+            context.takeScreenshot("vetmos-4b-move-element");
 
             context.setScreen(() -> new HudEditorScreen(null));
             context.waitTicks(30);

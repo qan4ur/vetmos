@@ -19,7 +19,6 @@ import java.util.*;
  * module's settings in the ClickGUI. A side panel lists all HUD modules so they can be switched on and off.
  */
 public class HudEditorScreen extends Screen {
-    private static final int SNAP = 4;
     private static final int SIDE_W = 118, SIDE_HEADER = 18, SIDE_ROW = 14;
     private static int sideX = Integer.MIN_VALUE, sideY;
     private static boolean sideFolded;
@@ -126,7 +125,7 @@ public class HudEditorScreen extends Screen {
             float[] an = anims.computeIfAbsent(m, k -> new float[2]);
             an[0] = Anim.approach(an[0], m == hovered ? 1 : 0, 18);
             an[1] = Anim.approach(an[1], m == dragging ? 1 : 0, 18);
-            drawElementFrame(ctx, m, an[0], an[1]);
+            HudLayout.drawFrame(ctx, m, an[0], an[1], width);
         }
 
         // snapping guides
@@ -162,38 +161,6 @@ public class HudEditorScreen extends Screen {
         ctx.createNewRootLayer();
         tooltip.render(ctx, mouseX, mouseY, width, height);
         Paint.alpha = oldAlpha;
-    }
-
-    private void drawElementFrame(DrawContext ctx, Module m, float hover, float drag) {
-        double[] b = HudManager.getBounds(m);
-        int x = (int) Math.floor(b[0]) - 1, y = (int) Math.floor(b[1]) - 1;
-        int w = (int) Math.ceil(b[0] + b[2]) + 1 - x, h = (int) Math.ceil(b[1] + b[3]) + 1 - y;
-        float f = Math.max(hover, drag);
-
-        Paint.rect(ctx, x, y, w, h, Palette.accentA(Math.round(14 + 26 * f)));
-        Paint.outline(ctx, x, y, w, h, 0, Anim.mix(Palette.accentA(150), Palette.accentBright(), f));
-        // corner ticks
-        int c = Anim.mix(Palette.accent(), 0xFFFFFFFF, f * 0.7f);
-        int t = Math.min(4, Math.min(w, h) / 2);
-        Paint.rect(ctx, x - 1, y - 1, t + 1, 1, c);
-        Paint.rect(ctx, x - 1, y - 1, 1, t + 1, c);
-        Paint.rect(ctx, x + w - t, y - 1, t + 1, 1, c);
-        Paint.rect(ctx, x + w, y - 1, 1, t + 1, c);
-        Paint.rect(ctx, x - 1, y + h, t + 1, 1, c);
-        Paint.rect(ctx, x - 1, y + h - t, 1, t + 1, c);
-        Paint.rect(ctx, x + w - t, y + h, t + 1, 1, c);
-        Paint.rect(ctx, x + w, y + h - t, 1, t + 1, c);
-
-        // title label
-        float sc = 0.75f;
-        String label = m.displayTitle();
-        int lw = Math.round(Paint.width(label) * sc) + 6, lh = 9;
-        int lx = Math.max(1, Math.min(width - lw - 1, x));
-        int ly = y - lh - 1;
-        if (ly < 1) ly = y + h + 1;
-        Paint.rect(ctx, lx, ly, lw, lh, Anim.mix(0xB0101012, 0xD0303034, f));
-        Paint.rect(ctx, lx, ly + lh - 1, lw, 1, Anim.mix(0xFF9A9A9A, Palette.accent(), f));
-        Paint.textScaled(ctx, label, lx + 3, ly + 2, sc, Palette.TEXT);
     }
 
     private void renderHint(DrawContext ctx) {
@@ -335,50 +302,15 @@ public class HudEditorScreen extends Screen {
         guideX = null;
         guideY = null;
         if (!Screen.hasShiftDown()) {
-            double[] sx = snap(left, w, true);
+            double[] sx = HudLayout.snap(left, w, true, width, height, dragging);
             left = sx[0];
             if (!Double.isNaN(sx[1])) guideX = sx[1];
-            double[] sy = snap(top, h, false);
+            double[] sy = HudLayout.snap(top, h, false, width, height, dragging);
             top = sy[0];
             if (!Double.isNaN(sy[1])) guideY = sy[1];
         }
-        move(dragging, left, top, w, h);
+        HudLayout.move(dragging, left, top, w, h, width, height);
         return true;
-    }
-
-    /** Snaps the box edge/center to screen edges, the screen center and other elements. Returns {pos, guide or NaN}. */
-    private double[] snap(double pos, double size, boolean horizontal) {
-        double screen = horizontal ? width : height;
-        List<Double> targets = new ArrayList<>(List.of(0.0, screen / 2, screen));
-        for (Module o : enabledHud()) {
-            if (o == dragging) continue;
-            double[] ob = HudManager.getBounds(o);
-            double s = horizontal ? ob[0] : ob[1], l = horizontal ? ob[2] : ob[3];
-            targets.add(s);
-            targets.add(s + l);
-            targets.add(s + l / 2);
-        }
-        double best = SNAP + 1, result = pos, guide = Double.NaN;
-        double[] offsets = { 0, size / 2, size }; // left/top edge, center, right/bottom edge
-        for (double t : targets) {
-            for (double off : offsets) {
-                double d = Math.abs(pos + off - t);
-                if (d < best) {
-                    best = d;
-                    result = t - off;
-                    guide = t;
-                }
-            }
-        }
-        return new double[] { result, guide };
-    }
-
-    private void move(Module m, double left, double top, double w, double h) {
-        left = Math.max(0, Math.min(width - w, left));
-        top = Math.max(0, Math.min(height - h, top));
-        HudPosition pos = HudManager.getPosition(m).copy();
-        pos.setFromTopLeft(left, top, w, h, width, height);
-        HudManager.setPosition(m, pos);
     }
 
     @Override
@@ -386,7 +318,7 @@ public class HudEditorScreen extends Screen {
         sideDragging = false;
         if (dragging != null && dragging.isEnabled()) {
             double[] b = HudManager.getBounds(dragging);
-            move(dragging, b[0], b[1], b[2], b[3]);
+            HudLayout.move(dragging, b[0], b[1], b[2], b[3], width, height);
         }
         dragging = null;
         guideX = null;
@@ -398,16 +330,11 @@ public class HudEditorScreen extends Screen {
     public boolean mouseScrolled(double mx, double my, double horizontalAmount, double verticalAmount) {
         Module m = dragging != null ? dragging : elementAt(mx, my);
         if (m == null || verticalAmount == 0) return true;
-        DoubleSetting scale = ((HudModule) m).hudScale();
-        double[] before = HudManager.getBounds(m);
-        double cx = before[0] + before[2] / 2, cy = before[1] + before[3] / 2;
-        scale.set(scale.get() + (verticalAmount > 0 ? 0.05 : -0.05));
-        double[] after = HudManager.getBounds(m);
-        move(m, cx - after[2] / 2, cy - after[3] / 2, after[2], after[3]);
+        double[] sz = HudLayout.scaleBy(m, verticalAmount, width, height);
         if (dragging == m) {
             // keep the grab point proportional so the element doesn't jump away from the cursor
-            dragDX *= after[2] / Math.max(1e-6, before[2]);
-            dragDY *= after[3] / Math.max(1e-6, before[3]);
+            dragDX *= sz[2] / Math.max(1e-6, sz[0]);
+            dragDY *= sz[3] / Math.max(1e-6, sz[1]);
         }
         scaleShown = m;
         scaleFade = 1;

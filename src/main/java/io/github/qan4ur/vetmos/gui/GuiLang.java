@@ -143,6 +143,16 @@ public final class GuiLang {
         ui("macro-howto-3", "3. Type the text: a message, a /server command or a .Vetmos command.");
         ui("macro-howto-4", "4. Press the key in game (menu closed). ▶ test sends it right away.");
 
+        // single-element positioning
+        ui("move", "Move");
+        ui("move-desc", "Drag this element right on the screen, without the HUD editor.");
+        ui("move-hint", "LMB - move · wheel - size · Enter - done · Esc - cancel");
+        ui("move-done", "Done");
+        ui("move-cancel", "Cancel");
+        ui("move-done-desc", "Keep the position and go back (Enter or RMB).");
+        ui("move-cancel-desc", "Restore the previous position and size (Esc).");
+        ui("move-saved", "Position saved");
+
         // GUI-side hooks (welcome guide on the first world join). Registered here because this is the GUI's only
         // entry point called at startup.
     }

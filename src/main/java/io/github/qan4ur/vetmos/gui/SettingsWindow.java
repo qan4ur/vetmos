@@ -43,6 +43,10 @@ public class SettingsWindow {
     private final MacroEditor macroEditor;
     private static final String MACRO_TAB = "#macros";
     private final ButtonWidget resetPosition;
+    /** "Переместить" (HUD modules only): positions the element without the HUD editor. */
+    private final ButtonWidget moveButton;
+    /** Set by the screen: starts the single-element positioning mode. */
+    public Runnable moveAction;
     final SearchField search = new SearchField();
     private int tab;
     private float scroll, scrollTarget;
@@ -90,6 +94,11 @@ public class SettingsWindow {
         resetPosition = module instanceof HudModule
             ? new ButtonWidget(() -> Lang.ui("reset-position", "Сбросить позицию"), () -> Lang.ui("reset-position-desc", "Вернуть элемент HUD на место по умолчанию."), () -> HudManager.resetPosition(module))
             : null;
+        moveButton = module instanceof HudModule
+            ? new ButtonWidget(() -> "✥ " + Lang.ui("move", "Переместить"), () -> Lang.ui("move-desc", "Перетащить этот элемент прямо на экране, без редактора HUD."), () -> {
+                if (moveAction != null) moveAction.run();
+            })
+            : null;
 
         buttons.add(new HeaderButton(() -> "↺ " + Lang.ui("reset-defaults-short", "Сбросить"),
             () -> Lang.ui("reset-defaults", "Сбросить по умолчанию") + ": " + Lang.ui("reset-defaults-desc", "все настройки модуля вернутся к значениям по умолчанию (клавиша и состояние сохраняются)."),
@@ -108,6 +117,7 @@ public class SettingsWindow {
         if (s instanceof DoubleSetting d) return new SliderWidget(d);
         if (s instanceof EnumSetting<?> en) return new EnumWidget(en);
         if (s instanceof ColorSetting c) return new ColorWidget(c);
+        if (s instanceof io.github.qan4ur.vetmos.setting.KeySetting k) return new KeySettingWidget(k);
         return null;
     }
 
@@ -399,7 +409,7 @@ public class SettingsWindow {
     }
 
     private void renderPreview(DrawContext ctx, int mx, int my, Tooltip tip, int px, int py, int pw, int ph) {
-        int boxH = Math.min(ph - (resetPosition != null ? 22 : 0), Math.max(70, ph * 3 / 5));
+        int boxH = Math.min(ph - (resetPosition != null ? 40 : 0), Math.max(70, ph * 3 / 5));
         if (resetPosition == null && macroEditor == null) boxH = Math.min(boxH, 92);
         if (macroEditor != null) boxH = Math.min(ph - 24, 160);
         Paint.inset(ctx, px, py, pw, boxH);
@@ -427,8 +437,13 @@ public class SettingsWindow {
             }
             if (failed) Paint.textCentered(ctx, Lang.ui("preview-error", "Предпросмотр недоступен"), px + pw / 2, py + boxH / 2 - 4, Palette.TEXT_MUTED);
             ctx.disableScissor();
+            moveButton.x = px;
+            moveButton.y = py + boxH + 3;
+            moveButton.w = pw;
+            moveButton.render(ctx, mx, my, tip);
+            Paint.rect(ctx, px, py + boxH + 3 + 2 + 13 - 2, pw, 2, Palette.accent()); // prominent: accent bottom line
             resetPosition.x = px;
-            resetPosition.y = py + boxH + 3;
+            resetPosition.y = py + boxH + 21;
             resetPosition.w = pw;
             resetPosition.render(ctx, mx, my, tip);
         } else if (macroEditor != null) {
@@ -461,7 +476,7 @@ public class SettingsWindow {
         }
 
         // the module description, always visible
-        int dy = py + boxH + (resetPosition != null ? 22 : 6);
+        int dy = py + boxH + (resetPosition != null ? 40 : 6);
         int maxY = py + ph;
         List<OrderedText> lines = Paint.wrap(module.displayDescription(), Math.round(pw / 0.75f));
         var m = ctx.getMatrices();
@@ -541,6 +556,7 @@ public class SettingsWindow {
             for (Widget wd : visible) if (wd.mouseClicked(mx, my, button)) return true;
             return true;
         }
+        if (moveButton != null && moveButton.mouseClicked(mx, my, button)) return true;
         if (resetPosition != null && resetPosition.mouseClicked(mx, my, button)) return true;
         return true;
     }

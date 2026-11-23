@@ -9,11 +9,9 @@ import io.github.qan4ur.vetmos.setting.EnumSetting;
 import io.github.qan4ur.vetmos.util.Keys;
 import io.github.qan4ur.vetmos.util.Lang;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.ColorHelper;
@@ -63,6 +61,8 @@ public class Zoom extends Module {
 
     // ---------------------------------------------------------------- settings
 
+    private final io.github.qan4ur.vetmos.setting.KeySetting zoomKey = key(GENERAL, "key", "Клавиша зума",
+        "Клавиша (или кнопка мыши), по которой работает зум. Не конфликтует с ванильными биндами.", GLFW.GLFW_KEY_C);
     private final EnumSetting<Mode> mode = enumeration(GENERAL, "mode", "Режим",
         "Удержание: зум, пока зажата клавиша. Переключение: нажал — включил, нажал ещё раз — выключил.", Mode.HOLD);
     private final DoubleSetting factor = decimal(GENERAL, "factor", "Кратность",
@@ -101,7 +101,7 @@ public class Zoom extends Module {
 
     // ---------------------------------------------------------------- state
 
-    private KeyBinding key;
+    private boolean keyWasDown;
     private boolean active;
     private boolean toggled;
     /** Zoom level chosen for the current / last zoom (base factor or changed with the wheel). */
@@ -118,7 +118,7 @@ public class Zoom extends Module {
     private boolean prevSmoothCam;
 
     public Zoom() {
-        super("zoom", "Зум", "Приближение камеры по клавише (по умолчанию C), как в OptiFine.", Category.RENDER, true, Keys.NONE);
+        super("zoom", "Зум", "Встроенный зум: держи клавишу (по умолчанию C, меняется в настройках) - камера приближается.", Category.RENDER, true, Keys.NONE);
         scrollStep.visibleWhen(scroll::get);
         scrollMin.visibleWhen(scroll::get);
         scrollMax.visibleWhen(scroll::get);
@@ -131,15 +131,15 @@ public class Zoom extends Module {
 
     @Override
     public void onInit() {
-        key = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.vetmos.zoom", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_C, "key.categories.vetmos"));
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            boolean pressedNow = false;
-            while (key.wasPressed()) pressedNow = true;
+            boolean down = client.currentScreen == null && zoomKey.isPressed();
+            boolean pressedNow = down && !keyWasDown;
+            keyWasDown = down;
             if (!isEnabled() || client.player == null || client.world == null) {
                 toggled = false;
                 return;
             }
-            if (mode.get() == Mode.TOGGLE && pressedNow && client.currentScreen == null) toggled = !toggled;
+            if (mode.get() == Mode.TOGGLE && pressedNow) toggled = !toggled;
         });
         HudElementRegistry.addFirst(Identifier.of("vetmos", "zoom_vignette"), (ctx, tc) -> renderVignette(ctx));
     }
@@ -161,8 +161,8 @@ public class Zoom extends Module {
     // ---------------------------------------------------------------- logic
 
     private boolean wantsZoom() {
-        if (!isEnabled() || key == null || mc.player == null || mc.world == null) return false;
-        if (mode.get() == Mode.HOLD) return key.isPressed() && mc.currentScreen == null;
+        if (!isEnabled() || mc.player == null || mc.world == null) return false;
+        if (mode.get() == Mode.HOLD) return mc.currentScreen == null && zoomKey.isPressed();
         return toggled;
     }
 

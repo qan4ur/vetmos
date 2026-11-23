@@ -92,6 +92,10 @@ public abstract class Module {
         return add(new ColorSetting(name, title, description, group, defArgb));
     }
 
+    protected KeySetting key(String group, String name, String title, String description, int defaultKey) {
+        return add(new KeySetting(name, title, description, group, defaultKey));
+    }
+
     /** The standard "scale" setting of HUD modules. */
     protected DoubleSetting hudScaleSetting() {
         return decimal("HUD", "scale", "Размер", "Размер элемента на экране (также колёсико мыши в редакторе HUD).", 1.0, 0.3, 4.0);

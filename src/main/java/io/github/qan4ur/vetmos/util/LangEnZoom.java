@@ -5,8 +5,10 @@ final class LangEnZoom {
     private LangEnZoom() {}
 
     static void register() {
+        Lang.en("zoom.key", "Zoom key");
+        Lang.en("zoom.key#desc", "Key (or mouse button) that zooms. Doesn't conflict with vanilla key binds.");
         Lang.en("zoom", "Zoom");
-        Lang.en("zoom#desc", "Zooms the camera in on a key (C by default), like OptiFine.");
+        Lang.en("zoom#desc", "Built-in zoom: hold the key (C by default, change it in the settings) to zoom in.");
 
         Lang.en("group:Колёсико мыши", "Mouse wheel");
         Lang.en("group:Вид", "View");
