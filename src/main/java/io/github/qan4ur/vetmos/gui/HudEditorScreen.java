@@ -5,6 +5,7 @@ import io.github.qan4ur.vetmos.hud.HudModule;
 import io.github.qan4ur.vetmos.hud.HudPosition;
 import io.github.qan4ur.vetmos.module.Module;
 import io.github.qan4ur.vetmos.setting.DoubleSetting;
+import io.github.qan4ur.vetmos.util.Lang;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
@@ -41,7 +42,7 @@ public class HudEditorScreen extends Screen {
     private float resetHover, resetFlash, sideHeaderHover, sideFade = 1;
 
     public HudEditorScreen(Screen parent) {
-        super(Text.literal("Редактор HUD"));
+        super(Text.literal(Lang.ui("hud-editor", "Редактор HUD")));
         this.parent = parent;
     }
 
@@ -157,7 +158,7 @@ public class HudEditorScreen extends Screen {
         Paint.alpha = beforeSide;
 
         if (hovered != null && dragging == null && !isOverSidebar(mouseX, mouseY)) {
-            tooltip.offer(hovered, hovered.title, hovered.description);
+            tooltip.offer(hovered, hovered.displayTitle(), hovered.displayDescription());
         }
         ctx.createNewRootLayer();
         tooltip.render(ctx, mouseX, mouseY, width, height);
@@ -187,7 +188,7 @@ public class HudEditorScreen extends Screen {
 
         // title label
         float sc = 0.75f;
-        String label = m.title;
+        String label = m.displayTitle();
         int lw = Math.round(Paint.width(label) * sc) + 6, lh = 9;
         int lx = Math.max(1, Math.min(width - lw - 1, x));
         int ly = y - lh - 1;
@@ -197,8 +198,8 @@ public class HudEditorScreen extends Screen {
     }
 
     private void renderHint(DrawContext ctx) {
-        String hint = "ЛКМ — двигать, колёсико — размер, ПКМ — настройки, Esc — выход";
-        String sub = "Shift — без привязки к краям";
+        String hint = Lang.ui("hud-hint", "ЛКМ — двигать, колёсико — размер, ПКМ — настройки, Esc — выход");
+        String sub = Lang.ui("hud-hint-shift", "Shift — без привязки к краям");
         int w = Paint.width(hint) + 16;
         int x = (width - w) / 2, y = 5;
         Paint.glow(ctx, x, y, w, 24, 5, Palette.SHADOW, 4);
@@ -237,8 +238,8 @@ public class HudEditorScreen extends Screen {
             Anim.mix(Palette.HEADER_BOTTOM, Palette.HEADER_BOTTOM_HOVER, sideHeaderHover), true, bodyH <= 0);
         if (bodyH > 0) Paint.rect(ctx, x, y + SIDE_HEADER - 1, SIDE_W, 1, Palette.accentA(200));
         Paint.outline(ctx, x, y, SIDE_W, total, 5, Palette.OUTLINE);
-        Paint.textCentered(ctx, "Элементы HUD", x + SIDE_W / 2, y + 5, Palette.TEXT);
-        if (hh) tooltip.offer("side-header", "Элементы HUD", "Нажмите на элемент, чтобы включить или выключить его. ЛКМ по заголовку — перетащить, ПКМ — свернуть.");
+        Paint.textCentered(ctx, Lang.ui("hud-elements", "Элементы HUD"), x + SIDE_W / 2, y + 5, Palette.TEXT);
+        if (hh) tooltip.offer("side-header", Lang.ui("hud-elements", "Элементы HUD"), Lang.ui("hud-elements-desc", "Нажмите на элемент, чтобы включить или выключить его. ЛКМ по заголовку — перетащить, ПКМ — свернуть."));
 
         if (bodyH <= 0) return;
         ctx.enableScissor(x, y + SIDE_HEADER, x + SIDE_W, y + total);
@@ -252,8 +253,8 @@ public class HudEditorScreen extends Screen {
             if (an[0] > 0.01f) Paint.rect(ctx, x + 2, ry, SIDE_W - 4, SIDE_ROW, Anim.withAlpha(0xFFFFFFFF, Math.round(18 * an[0])));
             int dotC = Anim.mix(0xFF3A3A3A, Palette.accent(), an[1]);
             Paint.circle(ctx, x + 9, ry + SIDE_ROW / 2, 2, dotC);
-            Paint.text(ctx, Paint.trim(m.title, SIDE_W - 22), x + 15, ry + 3, Anim.mix(Palette.TEXT_MUTED, Palette.TEXT, Math.max(an[1], an[0] * 0.6f)));
-            if (hov) tooltip.offer("side:" + m.name, m.title, m.description + " (ЛКМ — вкл/выкл, ПКМ — настройки)");
+            Paint.text(ctx, Paint.trim(m.displayTitle(), SIDE_W - 22), x + 15, ry + 3, Anim.mix(Palette.TEXT_MUTED, Palette.TEXT, Math.max(an[1], an[0] * 0.6f)));
+            if (hov) tooltip.offer("side:" + m.name, m.displayTitle(), m.displayDescription() + " " + Lang.ui("hud-side-row", "(ЛКМ — вкл/выкл, ПКМ — настройки)"));
             ry += SIDE_ROW;
         }
         // reset-all button
@@ -261,8 +262,8 @@ public class HudEditorScreen extends Screen {
         boolean rh = Paint.inside(mx, my, bx, by, bw, bh) && my < y + total;
         resetHover = Anim.approach(resetHover, rh ? 1 : 0, 16);
         resetFlash = Anim.approach(resetFlash, 0, 6);
-        ButtonWidget.draw(ctx, bx, by, bw, bh, "Сбросить позиции", resetHover, resetFlash);
-        if (rh) tooltip.offer("reset-all", "Вернуть все элементы HUD на места по умолчанию.");
+        ButtonWidget.draw(ctx, bx, by, bw, bh, Lang.ui("reset-positions", "Сбросить позиции"), resetHover, resetFlash);
+        if (rh) tooltip.offer("reset-all", Lang.ui("reset-positions-desc", "Вернуть все элементы HUD на места по умолчанию."));
         ctx.disableScissor();
     }
 

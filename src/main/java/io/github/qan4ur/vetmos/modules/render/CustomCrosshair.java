@@ -513,7 +513,7 @@ public class CustomCrosshair extends Module implements HudModule {
 
         @Override
         public String toString() {
-            return title;
+            return io.github.qan4ur.vetmos.util.Lang.tr("enum:Style." + name(), title);
         }
     }
 
@@ -530,7 +530,7 @@ public class CustomCrosshair extends Module implements HudModule {
 
         @Override
         public String toString() {
-            return title;
+            return io.github.qan4ur.vetmos.util.Lang.tr("enum:IndicatorMode." + name(), title);
         }
     }
 }

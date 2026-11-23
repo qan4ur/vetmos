@@ -30,7 +30,7 @@ public class ArmorHud extends Module implements HudModule {
         Layout(String title) { this.title = title; }
 
         @Override
-        public String toString() { return title; }
+        public String toString() { return io.github.qan4ur.vetmos.util.Lang.tr("enum:Layout." + name(), title); }
     }
 
     public enum Display {
@@ -41,7 +41,7 @@ public class ArmorHud extends Module implements HudModule {
         Display(String title) { this.title = title; }
 
         @Override
-        public String toString() { return title; }
+        public String toString() { return io.github.qan4ur.vetmos.util.Lang.tr("enum:Display." + name(), title); }
     }
 
     private static final String G = "Основное", C = "Цвета";

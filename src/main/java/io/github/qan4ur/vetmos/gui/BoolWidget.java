@@ -27,7 +27,7 @@ public class BoolWidget extends SettingWidget<BoolSetting> {
 
         int tw = 16, th = 8;
         int tx = right() - tw, ty = y + (ROW - th) / 2;
-        Paint.text(ctx, Paint.trim(setting.title, tx - x - 4), x, y + 3, textColor(hover));
+        Paint.text(ctx, Paint.trim(title(), tx - x - 4), x, y + 3, textColor(hover));
 
         if (e > 0.02f) Paint.glow(ctx, tx, ty, tw, th, 4, Anim.alpha(Palette.glow(), e), 3);
         Paint.round(ctx, tx, ty, tw, th, 4, Anim.mix(Palette.TRACK, Palette.accent(), e));

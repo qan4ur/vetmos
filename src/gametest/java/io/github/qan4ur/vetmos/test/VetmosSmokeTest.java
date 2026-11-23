@@ -13,6 +13,7 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContex
 public class VetmosSmokeTest implements FabricClientGameTest {
     @Override
     public void runTest(ClientGameTestContext context) {
+        context.runOnClient(client -> io.github.qan4ur.vetmos.config.ConfigManager.setWelcomeShown(true));
         try (TestSingleplayerContext sp = context.worldBuilder().create()) {
             sp.getClientWorld().waitForChunksRender();
             sp.getServer().runCommand("time set noon");
@@ -48,6 +49,28 @@ public class VetmosSmokeTest implements FabricClientGameTest {
             context.setScreen(() -> new HudEditorScreen(null));
             context.waitTicks(30);
             context.takeScreenshot("vetmos-5-hud-editor");
+
+            // English UI with a purple gradient accent
+            context.runOnClient(client -> {
+                io.github.qan4ur.vetmos.modules.client.InterfaceModule ui = ModuleManager.get(io.github.qan4ur.vetmos.modules.client.InterfaceModule.class);
+                ui.language.set(io.github.qan4ur.vetmos.modules.client.InterfaceModule.Language.EN);
+                ui.accent.set(0xFF8B5CF6);
+                ui.gradient.set(true);
+                ui.accent2.set(0xFF38BDF8);
+            });
+            context.setScreen(() -> new ClickGuiScreen(null, ModuleManager.get(io.github.qan4ur.vetmos.modules.hud.TargetHud.class)));
+            context.waitTicks(30);
+            context.takeScreenshot("vetmos-6-english-purple-settings");
+
+            context.runOnClient(client -> {
+                io.github.qan4ur.vetmos.modules.client.InterfaceModule ui = ModuleManager.get(io.github.qan4ur.vetmos.modules.client.InterfaceModule.class);
+                ui.language.set(io.github.qan4ur.vetmos.modules.client.InterfaceModule.Language.RU);
+                ui.resetSettings();
+                io.github.qan4ur.vetmos.config.ConfigManager.setWelcomeShown(false);
+            });
+            context.setScreen(ClickGuiScreen::new);
+            context.waitTicks(30);
+            context.takeScreenshot("vetmos-7-welcome");
 
             context.setScreen(() -> null);
             context.waitTicks(10);

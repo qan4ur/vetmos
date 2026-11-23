@@ -8,7 +8,13 @@ import org.lwjgl.glfw.GLFW;
 
 /** Minimal one-line text field for the module search (works with any keyboard layout via charTyped). */
 public class SearchField {
-    private static final int MAX_LEN = 32;
+    /** Placeholder shown while empty (a supplier so it follows the language). */
+    public java.util.function.Supplier<String> placeholder = () -> io.github.qan4ur.vetmos.util.Lang.ui("search-modules", "Поиск модулей…");
+    public int maxLen = 32;
+    /** Called on Enter (may be null). */
+    public Runnable onEnter;
+    /** Draw the ⌕ icon. */
+    public boolean icon = true;
     public int x, y, w, h;
     private String text = "";
     private boolean focused;
@@ -41,11 +47,11 @@ public class SearchField {
         Paint.outline(ctx, x, y, w, h, 4, Anim.mix(Anim.mix(Palette.CONTROL_LINE, Palette.CONTROL_LINE_HOVER, hover), Palette.accent(), focusAnim));
 
         int ty = y + (h - 8) / 2;
-        Paint.text(ctx, "⌕", x + 5, ty, Anim.mix(Palette.TEXT_FAINT, Palette.accent(), focusAnim));
-        int tx = x + 15;
-        int maxW = w - 20;
+        if (icon) Paint.text(ctx, "⌕", x + 5, ty, Anim.mix(Palette.TEXT_FAINT, Palette.accent(), focusAnim));
+        int tx = x + (icon ? 15 : 5);
+        int maxW = w - (icon ? 20 : 10) - 8;
         if (text.isEmpty()) {
-            Paint.text(ctx, "Поиск модулей…", tx, ty, Palette.TEXT_FAINT);
+            Paint.text(ctx, Paint.trim(placeholder.get(), maxW), tx, ty, Palette.TEXT_FAINT);
         } else {
             String shown = text;
             while (Paint.width(shown) > maxW && shown.length() > 1) shown = shown.substring(1);
@@ -76,7 +82,7 @@ public class SearchField {
 
     public boolean charTyped(char chr) {
         if (!StringHelper.isValidChar(chr)) return false;
-        if (text.length() >= MAX_LEN) return true;
+        if (text.length() >= maxLen) return true;
         text += chr;
         focused = true;
         lastEdit = System.currentTimeMillis();
@@ -98,10 +104,14 @@ public class SearchField {
             if (clip != null) {
                 for (char c : clip.toCharArray()) {
                     if (c == '\n' || c == '\r') break;
-                    if (StringHelper.isValidChar(c) && text.length() < MAX_LEN) text += c;
+                    if (StringHelper.isValidChar(c) && text.length() < maxLen) text += c;
                 }
                 lastEdit = System.currentTimeMillis();
             }
+            return true;
+        }
+        if ((key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_KP_ENTER) && onEnter != null) {
+            onEnter.run();
             return true;
         }
         if (Screen.isSelectAll(key)) {

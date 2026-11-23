@@ -81,6 +81,8 @@ public class Vetmos implements ClientModInitializer {
 
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> ConfigManager.save());
 
+        io.github.qan4ur.vetmos.gui.GuiHooks.init();
+
         LOG.info("{} loaded with {} modules", NAME, ModuleManager.all().size());
     }
 

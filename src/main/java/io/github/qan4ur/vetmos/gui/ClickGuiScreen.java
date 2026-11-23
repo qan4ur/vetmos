@@ -1,7 +1,12 @@
 package io.github.qan4ur.vetmos.gui;
 
+import io.github.qan4ur.vetmos.config.ConfigManager;
 import io.github.qan4ur.vetmos.module.Category;
 import io.github.qan4ur.vetmos.module.Module;
+import io.github.qan4ur.vetmos.module.ModuleManager;
+import io.github.qan4ur.vetmos.modules.client.InterfaceModule;
+import io.github.qan4ur.vetmos.util.Lang;
+import io.github.qan4ur.vetmos.util.Theme;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
@@ -10,16 +15,16 @@ import org.joml.Matrix3x2fStack;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.*;
+import java.util.function.Supplier;
 
 /**
- * Vetmos ClickGUI in the "blood moon" style: one draggable panel per category, modules toggle with LMB and unfold
- * their settings with RMB, a search field and a button to the HUD editor in the top bar.
+ * Vetmos ClickGUI: one draggable panel per category (LMB toggles a module, RMB / ⚙ opens its settings window),
+ * a top bar with search, profiles, accent palette, language, help and the HUD editor. Everything is laid out in
+ * virtual coordinates and drawn scaled by a fit factor so it fits small scaled screens.
  */
 public class ClickGuiScreen extends Screen {
     /** Panel positions / folded state kept for the session: {x, y, folded, moved by the user}. */
     private static final Map<Category, int[]> PANEL_STATE = new EnumMap<>(Category.class);
-    /** Modules whose settings were open when the GUI was closed. */
-    private static final Set<String> EXPANDED = new HashSet<>();
     private static String lastQuery = "";
 
     private static final int BAR_H = 22;
@@ -28,14 +33,20 @@ public class ClickGuiScreen extends Screen {
     private static final float MIN_ONE_ROW_FIT = 0.7f;
 
     private final Screen parent;
-    private final List<CategoryPanel> panels = new ArrayList<>();
+    private List<CategoryPanel> panels = new ArrayList<>();
     private final SearchField search = new SearchField();
     private final Tooltip tooltip = new Tooltip();
     private final Anim.Toggle open = new Anim.Toggle(0.22f, false);
+    private final PalettePopover palette = new PalettePopover();
+    private final ProfilePopover profiles = new ProfilePopover(this::rebuild);
+    private final WelcomeOverlay welcome = new WelcomeOverlay();
+    private SettingsWindow window;
+    private final BarButton hudBtn, helpBtn, langBtn, paletteBtn, profileBtn;
+    private final List<BarButton> barButtons = new ArrayList<>();
     private boolean closing;
     private boolean swallowChar;
-    private float hudBtnHover, hudBtnFlash, time;
-    private int barX, barY, barW, hudBtnX, hudBtnW;
+    private float time;
+    private int barX, barY, barW;
     private float openScale = 1;
     /** UI fit scale: the whole GUI is laid out in virtual coordinates (vw x vh) and drawn scaled by this factor. */
     private float fit = 1;
@@ -48,37 +59,95 @@ public class ClickGuiScreen extends Screen {
 
     /**
      * @param parent screen to return to on close (may be null)
-     * @param focus  module to expand, scroll to and highlight (may be null)
+     * @param focus  module whose settings window opens right away (may be null)
      */
     public ClickGuiScreen(Screen parent, Module focus) {
         super(Text.literal("Vetmos"));
         this.parent = parent;
         search.setText(focus == null ? lastQuery : "");
+        buildPanels();
 
-        for (Category c : Category.values()) {
-            int[] st = PANEL_STATE.get(c);
-            CategoryPanel p = new CategoryPanel(c, st != null ? st[0] : 0, st != null ? st[1] : 38, st != null && st[2] == 1, EXPANDED);
-            p.moved = st != null && st.length > 3 && st[3] == 1;
-            panels.add(p);
-        }
+        hudBtn = new BarButton(() -> vw < 520 ? "HUD" : Lang.ui("hud-editor", "Редактор HUD"),
+            () -> Lang.ui("hud-editor-desc", "Перетаскивайте элементы HUD мышью, меняйте их размер колёсиком."), this::openHudEditor);
+        helpBtn = new BarButton(() -> "?", () -> Lang.ui("help-desc", "Показать краткую справку."), () -> welcome.show());
+        langBtn = new BarButton(() -> Lang.isEnglish() ? "EN" : "RU", () -> Lang.ui("lang-desc", "Язык интерфейса: русский / English."), this::toggleLanguage);
+        paletteBtn = new BarButton(() -> "", () -> Lang.ui("palette-desc", "Акцентный цвет, градиент и язык."), () -> togglePopover(palette));
+        profileBtn = new BarButton(() -> "☰ " + ConfigManager.currentProfile() + " ▾", () -> Lang.ui("profiles-desc", "Профили настроек: переключение, создание, удаление, обмен кодом."), () -> togglePopover(profiles));
+        paletteBtn.active = palette::isOpen;
+        profileBtn.active = profiles::isOpen;
+        barButtons.addAll(List.of(profileBtn, paletteBtn, langBtn, helpBtn, hudBtn));
 
         if (focus != null) {
-            CategoryPanel target = null;
-            ModuleEntry entry = null;
+            CategoryPanel targetPanel = null;
+            ModuleEntry targetEntry = null;
             for (CategoryPanel p : panels) {
                 for (ModuleEntry e : p.entries()) {
                     if (e.module == focus) {
-                        target = p;
-                        entry = e;
+                        targetPanel = p;
+                        targetEntry = e;
                     }
                 }
             }
-            if (target != null) {
-                target.focus(entry);
-                panels.remove(target);
-                panels.add(target);
+            if (targetPanel != null) {
+                targetPanel.focus(targetEntry);
+                panels.remove(targetPanel);
+                panels.add(targetPanel);
             }
+            window = new SettingsWindow(focus, false);
         }
+
+        if (!ConfigManager.isWelcomeShown()) {
+            welcome.show();
+            GuiHooks.markShown();
+        }
+    }
+
+    private void buildPanels() {
+        panels = new ArrayList<>();
+        for (Category c : Category.values()) {
+            int[] st = PANEL_STATE.get(c);
+            CategoryPanel p = new CategoryPanel(c, st != null ? st[0] : 0, st != null ? st[1] : 38, st != null && st[2] == 1, this::openSettings);
+            p.moved = st != null && st.length > 3 && st[3] == 1;
+            panels.add(p);
+        }
+    }
+
+    /** After a profile switch / code import: rebuild module rows and the open settings window. */
+    private void rebuild() {
+        saveState();
+        List<Category> order = new ArrayList<>();
+        for (CategoryPanel p : panels) order.add(p.category);
+        buildPanels();
+        panels.sort(Comparator.comparingInt(p -> order.indexOf(p.category)));
+        if (width > 0) layoutPanels();
+        if (window != null && !window.isClosing()) {
+            Module m = ModuleManager.get(window.module.name);
+            window = m != null ? new SettingsWindow(m, true) : null;
+        }
+    }
+
+    private void openSettings(Module m) {
+        if (window != null && window.module == m && !window.isClosing()) {
+            window.close();
+            return;
+        }
+        window = new SettingsWindow(m, window != null && !window.isClosing());
+        search.setFocused(false);
+        palette.hide();
+        profiles.hide();
+    }
+
+    private void toggleLanguage() {
+        InterfaceModule ui = ModuleManager.get(InterfaceModule.class);
+        if (ui != null) ui.language.set(Lang.isEnglish() ? InterfaceModule.Language.RU : InterfaceModule.Language.EN);
+    }
+
+    private void togglePopover(Popover p) {
+        BarButton anchor = p == palette ? paletteBtn : profileBtn;
+        Popover other = p == palette ? profiles : palette;
+        other.hide();
+        if (p.isOpen()) p.hide();
+        else p.show(anchor.x + anchor.w - p.w, barY + BAR_H + 4);
     }
 
     @Override
@@ -167,6 +236,12 @@ public class ClickGuiScreen extends Screen {
         return vh / 2.0 + (my - height / 2.0) / (openScale * fit);
     }
 
+    private Popover openPopover() {
+        if (palette.isOpen()) return palette;
+        if (profiles.isOpen()) return profiles;
+        return null;
+    }
+
     @Override
     public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
         Anim.frame();
@@ -175,13 +250,20 @@ public class ClickGuiScreen extends Screen {
             finishClose();
             return;
         }
+        if (window != null && window.isDead()) window = null;
         float e = closing ? Anim.easeInOutCubic(open.raw()) : Anim.easeOutCubic(open.raw());
         openScale = 0.94f + 0.06f * e;
         float oldAlpha = Paint.alpha;
         Paint.alpha = e;
 
         int mx = (int) Math.round(tx(mouseX)), my = (int) Math.round(ty(mouseY));
-        if (closing) mx = my = Widget.NO_MOUSE;
+        if (closing || welcome.isOpen()) mx = my = Widget.NO_MOUSE;
+
+        // who gets the mouse: popover > settings window > top bar / panels
+        Popover pop = openPopover();
+        boolean overPop = pop != null && pop.isOver(mx, my);
+        boolean overWindow = !overPop && window != null && window.isOver(mx, my);
+        int baseX = overPop || overWindow ? Widget.NO_MOUSE : mx, baseY = overPop || overWindow ? Widget.NO_MOUSE : my;
 
         Matrix3x2fStack m = ctx.getMatrices();
         m.pushMatrix();
@@ -194,70 +276,94 @@ public class ClickGuiScreen extends Screen {
         CategoryPanel top = null;
         for (int i = panels.size() - 1; i >= 0; i--) {
             CategoryPanel p = panels.get(i);
-            if (p.isDragging() || p.isOver(mx, my)) {
+            if (p.isDragging() || p.isOver(baseX, baseY)) {
                 top = p;
                 break;
             }
         }
         for (CategoryPanel p : panels) {
             boolean active = p == top;
-            p.render(ctx, active ? mx : Widget.NO_MOUSE, active ? my : Widget.NO_MOUSE, tooltip, query, vw, vh, bottomLimit(p));
+            p.render(ctx, active ? baseX : Widget.NO_MOUSE, active ? baseY : Widget.NO_MOUSE, tooltip, query, vw, vh, bottomLimit(p));
         }
 
-        renderTopBar(ctx, mx, my);
+        renderTopBar(ctx, baseX, baseY);
         renderHint(ctx);
+
+        if (window != null) window.render(ctx, overWindow ? mx : (overPop ? Widget.NO_MOUSE : mx), overPop ? Widget.NO_MOUSE : my, tooltip, vw, vh);
+        palette.render(ctx, overPop && pop == palette ? mx : Widget.NO_MOUSE, overPop && pop == palette ? my : Widget.NO_MOUSE, tooltip, vw, vh);
+        profiles.render(ctx, overPop && pop == profiles ? mx : Widget.NO_MOUSE, overPop && pop == profiles ? my : Widget.NO_MOUSE, tooltip, vw, vh);
+        Toasts.render(ctx, vw / 2, vh - 16);
+        welcome.render(ctx, (int) Math.round(tx(mouseX)), (int) Math.round(ty(mouseY)), vw, vh);
 
         m.popMatrix();
 
         ctx.createNewRootLayer();
-        if (!closing) tooltip.render(ctx, mouseX, mouseY, width, height);
+        if (!closing && !welcome.isVisible()) tooltip.render(ctx, mouseX, mouseY, width, height);
+        else tooltip.render(ctx, Widget.NO_MOUSE, Widget.NO_MOUSE, width, height); // reset hover state
         Paint.alpha = oldAlpha;
     }
 
     private void renderTopBar(DrawContext ctx, int mx, int my) {
-        barW = Math.min(vw - 16, 400);
+        barW = Math.min(vw - 16, 620);
         barX = (vw - barW) / 2;
         barY = 6;
+        time += Anim.dt;
 
         Paint.glow(ctx, barX, barY, barW, BAR_H, 6, Palette.SHADOW, 5);
         Paint.roundGradient(ctx, barX, barY, barW, BAR_H, 6, 0xF0181818, 0xF00C0C0C);
         Paint.outline(ctx, barX, barY, barW, BAR_H, 6, Palette.OUTLINE);
-        Paint.gradientH(ctx, barX + 6, barY + BAR_H - 1, barW / 2 - 6, 1, Palette.accentA(0), Palette.accentA(170));
-        Paint.gradientH(ctx, barX + barW / 2, barY + BAR_H - 1, barW / 2 - 6, 1, Palette.accentA(170), Palette.accentA(0));
+        SettingsWindow.accentLine(ctx, barX + 6, barY + BAR_H - 1, barW - 12);
 
-        // blood moon (a red disc with a dark bite) + title
+        // moon + gradient title
         int moonX = barX + 13, moonY = barY + BAR_H / 2;
-        time += Anim.dt;
         float pulse = 0.5f + 0.5f * (float) Math.sin(time * 2.2f);
         Paint.glow(ctx, moonX - 5, moonY - 5, 10, 10, 5, Palette.accentA(Math.round(70 + 60 * pulse)), 4);
-        Paint.circle(ctx, moonX, moonY, 5, Palette.accent());
+        Paint.circle(ctx, moonX, moonY, 5, Theme.accentAt(0) | 0xFF000000);
         Paint.circle(ctx, moonX + 2, moonY - 1, 4, 0xFF131313);
-        Text title = Text.literal("Vetmos").formatted(Formatting.BOLD);
-        int titleX = barX + 23;
-        Paint.text(ctx, title, titleX, barY + 7, Anim.mix(Palette.accent(), Palette.accentBright(), pulse * 0.6f));
+        String name = "Vetmos";
+        int tx = barX + 23;
+        for (int i = 0; i < name.length(); i++) {
+            Text ch = Text.literal(String.valueOf(name.charAt(i))).formatted(Formatting.BOLD);
+            int c = Theme.accentAt(i / (float) name.length()) | 0xFF000000;
+            Paint.text(ctx, ch, tx, barY + 7, Anim.mix(c, 0xFFFFFFFF, pulse * 0.15f));
+            tx += Paint.font().getWidth(ch);
+        }
+        int titleEnd = tx + 10;
 
-        // HUD editor button
-        String hudLabel = "Редактор HUD";
-        hudBtnW = Paint.width(hudLabel) + 14;
-        hudBtnX = barX + barW - hudBtnW - 4;
-        boolean bh = Paint.inside(mx, my, hudBtnX, barY + 3, hudBtnW, BAR_H - 6);
-        hudBtnHover = Anim.approach(hudBtnHover, bh ? 1 : 0, 16);
-        hudBtnFlash = Anim.approach(hudBtnFlash, 0, 6);
-        ButtonWidget.draw(ctx, hudBtnX, barY + 3, hudBtnW, BAR_H - 6, hudLabel, hudBtnHover, hudBtnFlash);
-        if (bh) tooltip.offer("hud-editor", "Редактор HUD", "Перетаскивайте элементы HUD мышью, меняйте их размер колёсиком.");
+        // right-side buttons, laid out right to left
+        int bx = barX + barW - 4;
+        for (int i = barButtons.size() - 1; i >= 0; i--) {
+            BarButton b = barButtons.get(i);
+            String label = b.label.get();
+            if (b == paletteBtn) b.w = 18;
+            else if (b == profileBtn) b.w = Math.min(100, Paint.width(label) + 12);
+            else b.w = Math.max(18, Paint.width(label) + 12);
+            bx -= b.w;
+            b.x = bx;
+            b.y = barY + 3;
+            b.h = BAR_H - 6;
+            bx -= 3;
+        }
+        for (BarButton b : barButtons) b.render(ctx, mx, my);
+        // palette swatch inside its button
+        int pc = paletteBtn.x + paletteBtn.w / 2, pcy = paletteBtn.y + paletteBtn.h / 2;
+        Paint.circle(ctx, pc, pcy, 4, Theme.accentAt(0.2f) | 0xFF000000);
+        Paint.circle(ctx, pc + 1, pcy + 1, 2, Theme.accentAt(0.7f) | 0xFF000000);
+        Paint.outline(ctx, pc - 4, pcy - 4, 8, 8, 4, 0x60FFFFFF);
 
-        // search field between the title and the button
-        int titleEnd = titleX + Paint.font().getWidth(title) + 10;
-        search.w = Math.max(50, Math.min(150, hudBtnX - titleEnd - 8));
+        // search between the title and the buttons
+        int right = profileBtn.x - 6;
+        search.w = Math.max(50, Math.min(160, right - titleEnd));
         search.h = BAR_H - 6;
-        search.x = Math.max(titleEnd, barX + (barW - search.w) / 2);
-        if (search.x + search.w > hudBtnX - 6) search.x = hudBtnX - 6 - search.w;
+        search.x = Math.max(titleEnd, Math.min(right - search.w, barX + (barW - search.w) / 2));
         search.y = barY + 3;
         search.render(ctx, mx, my);
+
+        for (BarButton b : barButtons) if (b.hovered) tooltip.offer(b, b.tooltip.get());
     }
 
     private void renderHint(DrawContext ctx) {
-        String hint = "ЛКМ — вкл/выкл  •  ПКМ — настройки  •  колёсико — прокрутка  •  Esc — закрыть";
+        String hint = Lang.ui("gui-hint", "ЛКМ — вкл/выкл  •  ПКМ или ⚙ — настройки  •  колёсико — прокрутка  •  Esc — закрыть");
         float sc = 0.75f;
         int w = Math.round(Paint.width(hint) * sc);
         Paint.textScaled(ctx, hint, (vw - w) / 2f, vh - 10, sc, 0xB0909090);
@@ -270,20 +376,31 @@ public class ClickGuiScreen extends Screen {
         if (closing) return true;
         if (KeybindWidget.listening != null) return KeybindWidget.listening.handleMouse(button);
         double mx = tx(mouseX), my = ty(mouseY);
+        if (welcome.mouseClicked(mx, my, button)) return true;
 
-        if (button == 0 && Paint.inside(mx, my, hudBtnX, barY + 3, hudBtnW, BAR_H - 6)) {
-            hudBtnFlash = 1;
-            Widget.click(1.1f);
-            openHudEditor();
+        Popover pop = openPopover();
+        if (pop != null) {
+            if (pop.mouseClicked(mx, my, button)) return true;
+            pop.hide();
+            BarButton anchor = pop == palette ? paletteBtn : profileBtn;
+            if (Paint.inside(mx, my, anchor.x, anchor.y, anchor.w, anchor.h)) return true; // the click closed it
+        }
+        for (BarButton b : barButtons) if (b.click(mx, my, button)) return true;
+        if (search.mouseClicked(mx, my, button)) {
+            if (window != null) window.search.setFocused(false);
             return true;
         }
-        if (search.mouseClicked(mx, my, button)) return true;
+
+        if (window != null && window.mouseClicked(mx, my, button)) return true;
+        if (window != null) window.search.setFocused(false);
 
         for (int i = panels.size() - 1; i >= 0; i--) {
             CategoryPanel p = panels.get(i);
             if (p.mouseClicked(mx, my, button)) {
-                panels.remove(i);
-                panels.add(p);
+                if (panels.contains(p)) {
+                    panels.remove(p);
+                    panels.add(p);
+                }
                 return true;
             }
         }
@@ -294,25 +411,44 @@ public class ClickGuiScreen extends Screen {
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
         double mx = tx(mouseX), my = ty(mouseY);
         for (CategoryPanel p : panels) p.mouseReleased(mx, my, button);
+        if (window != null) window.mouseReleased(mx, my, button);
+        palette.mouseReleased(mx, my, button);
+        profiles.mouseReleased(mx, my, button);
         return true;
     }
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-        if (closing) return true;
+        if (closing || welcome.isOpen()) return true;
         double mx = tx(mouseX), my = ty(mouseY);
         for (CategoryPanel p : panels) p.mouseDragged(mx, my, button);
+        if (window != null) window.mouseDragged(mx, my, button, vw, vh);
+        palette.mouseDragged(mx, my, button);
+        profiles.mouseDragged(mx, my, button);
         return true;
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-        if (closing) return true;
+        if (closing || welcome.isOpen()) return true;
         double mx = tx(mouseX), my = ty(mouseY);
+        Popover pop = openPopover();
+        if (pop != null && pop.mouseScrolled(mx, my, verticalAmount)) return true;
+        if (window != null && window.mouseScrolled(mx, my, verticalAmount)) return true;
         for (int i = panels.size() - 1; i >= 0; i--) {
             if (panels.get(i).mouseScrolled(mx, my, verticalAmount)) return true;
         }
         return true;
+    }
+
+    /** The text field that receives typing right now, or null. */
+    private SearchField typingTarget() {
+        Popover pop = openPopover();
+        if (pop != null && pop.focusedField() != null) return pop.focusedField();
+        if (window != null && !window.isClosing()) {
+            if (window.search.isFocused() || !search.isFocused()) return window.search;
+        }
+        return search;
     }
 
     @Override
@@ -323,22 +459,52 @@ public class ClickGuiScreen extends Screen {
             swallowChar = true;
             return KeybindWidget.listening.handleKey(keyCode);
         }
+        if (welcome.isOpen()) {
+            if (keyCode == GLFW.GLFW_KEY_ESCAPE) welcome.finish();
+            swallowChar = true;
+            return true;
+        }
+        Popover pop = openPopover();
+        SearchField target = typingTarget();
+
         if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
-            if (search.isFocused() && !search.text().isEmpty()) {
-                search.setText("");
-                search.setFocused(false);
+            if (pop != null) {
+                pop.hide();
+                return true;
+            }
+            if (target.isFocused() && !target.text().isEmpty()) {
+                target.setText("");
+                target.setFocused(false);
+                return true;
+            }
+            if (window != null && !window.isClosing()) {
+                window.close();
                 return true;
             }
             close();
             return true;
         }
+        // copy / paste the settings of the open window
+        boolean windowOpen = window != null && !window.isClosing();
+        if (windowOpen && pop == null && !window.search.isFocused() && !search.isFocused()) {
+            if (Screen.isCopy(keyCode)) {
+                window.copySettings();
+                swallowChar = true;
+                return true;
+            }
+            if (Screen.isPaste(keyCode)) {
+                window.pasteSettings();
+                swallowChar = true;
+                return true;
+            }
+        }
         if (Screen.hasControlDown() && keyCode == GLFW.GLFW_KEY_F) {
-            search.setFocused(true);
+            target.setFocused(true);
             swallowChar = true;
             return true;
         }
-        if (keyCode == GLFW.GLFW_KEY_BACKSPACE && !search.text().isEmpty()) search.setFocused(true);
-        if (search.keyPressed(keyCode)) return true;
+        if (keyCode == GLFW.GLFW_KEY_BACKSPACE && !target.text().isEmpty()) target.setFocused(true);
+        if (target.keyPressed(keyCode)) return true;
         return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
@@ -348,9 +514,12 @@ public class ClickGuiScreen extends Screen {
             swallowChar = false;
             return true;
         }
-        if (closing || KeybindWidget.listening != null) return true;
-        if (chr == ' ' && search.text().isEmpty()) return true;
-        return search.charTyped(chr);
+        if (closing || KeybindWidget.listening != null || welcome.isOpen()) return true;
+        SearchField target = typingTarget();
+        if (chr == ' ' && target.text().isEmpty()) return true;
+        Popover pop = openPopover();
+        if (pop != null && pop.focusedField() == null) return true; // don't type into hidden fields under a popover
+        return target.charTyped(chr);
     }
 
     private void openHudEditor() {
@@ -383,8 +552,38 @@ public class ClickGuiScreen extends Screen {
 
     private void saveState() {
         for (CategoryPanel p : panels) PANEL_STATE.put(p.category, new int[] { p.x, p.y, p.isFolded() ? 1 : 0, p.moved ? 1 : 0 });
-        EXPANDED.clear();
-        for (CategoryPanel p : panels) for (ModuleEntry e : p.entries()) if (e.isExpanded()) EXPANDED.add(e.module.name);
         lastQuery = search.text();
+    }
+
+    /** A top-bar button. */
+    private static final class BarButton {
+        final Supplier<String> label, tooltip;
+        final Runnable action;
+        java.util.function.BooleanSupplier active = () -> false;
+        int x, y, w, h;
+        float hover, flash;
+        boolean hovered;
+
+        BarButton(Supplier<String> label, Supplier<String> tooltip, Runnable action) {
+            this.label = label;
+            this.tooltip = tooltip;
+            this.action = action;
+        }
+
+        void render(DrawContext ctx, int mx, int my) {
+            hovered = Paint.inside(mx, my, x, y, w, h);
+            hover = Anim.approach(hover, hovered || active.getAsBoolean() ? 1 : 0, 16);
+            flash = Anim.approach(flash, 0, 6);
+            ButtonWidget.draw(ctx, x, y, w, h, label.get(), hover, flash);
+            if (active.getAsBoolean()) Paint.outline(ctx, x, y, w, h, 3, Palette.accent());
+        }
+
+        boolean click(double mx, double my, int button) {
+            if (button != 0 || !Paint.inside(mx, my, x, y, w, h)) return false;
+            flash = 1;
+            Widget.click(1.1f);
+            action.run();
+            return true;
+        }
     }
 }

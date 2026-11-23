@@ -127,7 +127,7 @@ public class HitParticles extends Module {
 
         @Override
         public String toString() {
-            return title;
+            return io.github.qan4ur.vetmos.util.Lang.tr("enum:Kind." + name(), title);
         }
     }
 }

@@ -4,12 +4,13 @@ import net.minecraft.client.gui.DrawContext;
 
 /** Rounded outlined button that fills with red on hover and flashes when pressed. */
 public class ButtonWidget extends Widget {
-    private final String label;
-    private final String description;
+    private final java.util.function.Supplier<String> label;
+    private final java.util.function.Supplier<String> description;
     private final Runnable action;
     private float flash;
 
-    public ButtonWidget(String label, String description, Runnable action) {
+    /** Label and description are suppliers so they follow the interface language live. */
+    public ButtonWidget(java.util.function.Supplier<String> label, java.util.function.Supplier<String> description, Runnable action) {
         this.label = label;
         this.description = description;
         this.action = action;
@@ -26,8 +27,8 @@ public class ButtonWidget extends Widget {
         updateHover(hov);
         flash = Anim.approach(flash, 0, 6);
         int bx = x, by = y + 2, bw = w, bh = height() - 3;
-        draw(ctx, bx, by, bw, bh, label, hover, flash);
-        if (hov && description != null) tip.offer(this, description);
+        draw(ctx, bx, by, bw, bh, label.get(), hover, flash);
+        if (hov && description != null) tip.offer(this, description.get());
     }
 
     /** Shared look, also used by the top bar buttons. */

@@ -34,7 +34,7 @@ public class PotionHud extends Module implements HudModule {
         Sort(String title) { this.title = title; }
 
         @Override
-        public String toString() { return title; }
+        public String toString() { return io.github.qan4ur.vetmos.util.Lang.tr("enum:Sort." + name(), title); }
     }
 
     private static final String G = "Основное", C = "Цвета";

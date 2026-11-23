@@ -78,14 +78,14 @@ public class SliderWidget extends SettingWidget<Setting<?>> {
 
         String value = valueText();
         int vw = Paint.width(value);
-        Paint.text(ctx, Paint.trim(setting.title, right() - x - vw - 6), x, y + 3, textColor(hover));
+        Paint.text(ctx, Paint.trim(title(), right() - x - vw - 6), x, y + 3, textColor(hover));
         Paint.textRight(ctx, value, right(), y + 3, Anim.mix(Palette.TEXT_SECONDARY, Palette.TEXT, knob));
 
         int tx = trackX(), tw = trackW(), ty = y + 15;
         Paint.round(ctx, tx, ty, tw, 3, 1, Palette.TRACK);
         int fw = Math.round(tw * shown);
         if (fw > 0) {
-            Paint.gradientH(ctx, tx, ty, fw, 3, Palette.accentDim(), Palette.accent());
+            Paint.gradientH(ctx, tx, ty, fw, 3, Anim.mix(io.github.qan4ur.vetmos.util.Theme.accentAt(0) | 0xFF000000, 0xFF000000, 0.35f), io.github.qan4ur.vetmos.util.Theme.accentAt(shown) | 0xFF000000);
         }
         int kx = tx + fw;
         int kr = 3 + Math.round(knob);

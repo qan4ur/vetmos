@@ -112,7 +112,7 @@ public final class Paint {
     /** 1px outline that follows the rounded shape. */
     public static void outline(DrawContext ctx, int x, int y, int w, int h, int r, int color) {
         if (w <= 1 || h <= 1) return;
-        r = Math.max(0, Math.min(r, Math.min(w, h) / 2));
+        r = Math.max(0, Math.min(Math.min(r, MAX_R), Math.min(w, h) / 2));
         if (r == 0) {
             rect(ctx, x, y, w, 1, color);
             rect(ctx, x, y + h - 1, w, 1, color);

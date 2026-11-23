@@ -9,7 +9,8 @@ import net.minecraft.util.Formatting;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
+import java.util.function.Consumer;
+import io.github.qan4ur.vetmos.util.Lang;
 
 /** Draggable panel of one category. LMB on the header drags it, RMB folds it. The body scrolls with the wheel. */
 public class CategoryPanel {
@@ -31,12 +32,12 @@ public class CategoryPanel {
     private List<ModuleEntry> shown = new ArrayList<>();
     private ModuleEntry pendingFocus;
 
-    public CategoryPanel(Category category, int x, int y, boolean folded, Set<String> expanded) {
+    public CategoryPanel(Category category, int x, int y, boolean folded, Consumer<Module> openSettings) {
         this.category = category;
         this.x = x;
         this.y = y;
         this.fold = new Anim.Toggle(0.25f, !folded);
-        for (Module m : ModuleManager.inCategory(category)) entries.add(new ModuleEntry(m, expanded.contains(m.name)));
+        for (Module m : ModuleManager.inCategory(category)) entries.add(new ModuleEntry(m, openSettings));
     }
 
     public List<ModuleEntry> entries() {
@@ -58,15 +59,14 @@ public class CategoryPanel {
         return HEADER_H + bodyH;
     }
 
-    /** Unfolds the panel, expands the module and scrolls to it. */
+    /** Unfolds the panel, scrolls to the module and highlights it. */
     public void focus(ModuleEntry entry) {
         fold.snap(true);
-        entry.setExpanded(true, true);
         entry.pulse();
         pendingFocus = entry;
     }
 
-    private static String icon(Category c) {
+    static String icon(Category c) {
         return switch (c.name()) { // by name so new categories don't break compilation
             case "COMBAT" -> "⚔";
             case "HUD" -> "▣";
@@ -138,7 +138,7 @@ public class CategoryPanel {
         }
         Paint.outline(ctx, x, y, WIDTH, total, RADIUS, Palette.OUTLINE);
 
-        Text title = Text.literal(category.title).formatted(Formatting.BOLD);
+        Text title = Text.literal(category.displayTitle()).formatted(Formatting.BOLD);
         int tw = Paint.font().getWidth(title);
         String ic = icon(category);
         int iw = Paint.width(ic);
@@ -151,7 +151,7 @@ public class CategoryPanel {
         String count = enabled + "/" + entries.size();
         SmallText.right(ctx, count, x + WIDTH - 6, y + 7, Palette.TEXT_MUTED);
 
-        if (hh) tip.offer(this, category.title, "ЛКМ — перетащить панель, ПКМ — свернуть или развернуть. Включено модулей: " + enabled + " из " + entries.size() + ".");
+        if (hh) tip.offer(this, category.displayTitle(), Lang.ui("panel-hint", "ЛКМ — перетащить панель, ПКМ — свернуть или развернуть.") + " " + Lang.ui("panel-enabled", "Включено модулей") + ": " + enabled + "/" + entries.size());
 
         // entries
         if (bodyH > 2) {
@@ -163,7 +163,7 @@ public class CategoryPanel {
             boolean scrollable = contentH > maxBody;
             int ew = WIDTH - 4 - (scrollable ? 3 : 0);
             if (shown.isEmpty()) {
-                Paint.textCentered(ctx, "Ничего не найдено", x + WIDTH / 2, top + 6, Palette.TEXT_MUTED);
+                Paint.textCentered(ctx, Lang.ui("nothing-found", "Ничего не найдено"), x + WIDTH / 2, top + 6, Palette.TEXT_MUTED);
             }
             for (ModuleEntry e : shown) {
                 int h = e.height();
@@ -211,7 +211,6 @@ public class CategoryPanel {
 
     public void mouseReleased(double mx, double my, int button) {
         dragging = false;
-        for (ModuleEntry e : entries) e.mouseReleased(mx, my, button);
     }
 
     public void mouseDragged(double mx, double my, int button) {
@@ -219,14 +218,11 @@ public class CategoryPanel {
             x = (int) Math.round(mx - dragDX);
             y = (int) Math.round(my - dragDY);
             moved = true;
-            return;
         }
-        for (ModuleEntry e : shown) e.mouseDragged(mx, my, button);
     }
 
     public boolean mouseScrolled(double mx, double my, double amount) {
         if (!isOver(mx, my)) return false;
-        for (ModuleEntry e : shown) if (e.mouseScrolled(mx, my, amount)) return true;
         if (contentH > maxBody) scrollTarget -= (float) (amount * 22);
         return true;
     }

@@ -126,7 +126,7 @@ public class SwingAnimations extends Module {
 
         @Override
         public String toString() {
-            return title;
+            return io.github.qan4ur.vetmos.util.Lang.tr("enum:Preset." + name(), title);
         }
     }
 }

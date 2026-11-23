@@ -7,12 +7,12 @@ import java.util.function.BooleanSupplier;
 
 /** Small caption above a group of settings ("ЦВЕТА ────"); also used as a plain spacer when the title is null. */
 public class GroupHeader extends Widget {
-    private final String title;
+    private final java.util.function.Supplier<String> title;
     private final BooleanSupplier visible;
     private final int height;
 
-    public GroupHeader(String title, BooleanSupplier visible) {
-        this.title = title == null ? null : title.toUpperCase(Locale.ROOT);
+    public GroupHeader(java.util.function.Supplier<String> title, BooleanSupplier visible) {
+        this.title = title;
         this.visible = visible;
         this.height = 12;
     }
@@ -41,6 +41,7 @@ public class GroupHeader extends Widget {
             return;
         }
         float scale = 0.75f;
+        String title = this.title.get().toUpperCase(Locale.ROOT);
         Paint.textScaled(ctx, title, x, y + 4, scale, Anim.mix(Palette.TEXT_MUTED, Palette.accent(), 0.25f));
         int tw = Math.round(Paint.width(title) * scale);
         int lx = x + tw + 4;

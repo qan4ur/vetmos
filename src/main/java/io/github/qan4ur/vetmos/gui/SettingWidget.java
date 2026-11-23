@@ -1,6 +1,7 @@
 package io.github.qan4ur.vetmos.gui;
 
 import io.github.qan4ur.vetmos.setting.Setting;
+import io.github.qan4ur.vetmos.util.Lang;
 import net.minecraft.client.gui.DrawContext;
 
 import java.util.Objects;
@@ -12,8 +13,25 @@ public abstract class SettingWidget<S extends Setting<?>> extends Widget {
     private float resetHover;
     private float resetSpin;
 
+    private java.util.function.Supplier<String> label;
+
     protected SettingWidget(S setting) {
         this.setting = setting;
+    }
+
+    /** Replaces the displayed title (e.g. "Свой цвет" in the palette popover). */
+    public SettingWidget<S> label(java.util.function.Supplier<String> label) {
+        this.label = label;
+        return this;
+    }
+
+    public S setting() {
+        return setting;
+    }
+
+    /** Title in the selected language (or the label override). */
+    protected String title() {
+        return label != null ? label.get() : setting.displayTitle();
     }
 
     @Override
@@ -52,8 +70,8 @@ public abstract class SettingWidget<S extends Setting<?>> extends Widget {
         Paint.text(ctx, "↺", -Paint.width("↺") / 2, -4, color);
         m.popMatrix();
 
-        if (rh) tip.offer(this.setting.name + "#reset", "Сбросить «" + setting.title + "» к значению по умолчанию.");
-        else if (isHovered(mx, my)) tip.offer(setting, setting.title, setting.description);
+        // the description is always shown under the setting (DescribedWidget), so only the reset button has a tooltip
+        if (rh) tip.offer(this.setting.name + "#reset", Lang.ui("reset-setting", "Сбросить к значению по умолчанию") + ": " + title());
     }
 
     /** Handles a click on the reset button. */

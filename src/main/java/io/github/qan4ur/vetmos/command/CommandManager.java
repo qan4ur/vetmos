@@ -8,6 +8,7 @@ import io.github.qan4ur.vetmos.module.ModuleManager;
 import io.github.qan4ur.vetmos.setting.Setting;
 import io.github.qan4ur.vetmos.util.ChatUtil;
 import io.github.qan4ur.vetmos.util.Keys;
+import io.github.qan4ur.vetmos.util.Lang;
 import io.github.qan4ur.vetmos.util.Theme;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
@@ -42,10 +43,10 @@ public final class CommandManager {
                 case "config", "cfg" -> config(rest);
                 case "gui" -> Vetmos.openScreenNextTick(Vetmos.createClickGui());
                 case "hud" -> Vetmos.openScreenNextTick(Vetmos.createHudEditor());
-                default -> ChatUtil.error("Unknown command '" + cmd + "'. Type " + PREFIX + "help");
+                default -> ChatUtil.error(f("cmd-unknown", "Неизвестная команда '%s'. Напиши %shelp", cmd, PREFIX));
             }
         } catch (RuntimeException e) {
-            ChatUtil.error("Command failed: " + e.getMessage());
+            ChatUtil.error(f("cmd-failed", "Ошибка команды: %s", e.getMessage()));
             Vetmos.LOG.error("Command failed: {}", message, e);
         }
         return true;
@@ -53,23 +54,43 @@ public final class CommandManager {
 
     private static Module module(String name) {
         Module m = ModuleManager.get(name);
-        if (m == null) ChatUtil.error("No module named '" + name + "'. Type " + PREFIX + "modules");
+        if (m == null) ChatUtil.error(f("cmd-no-module", "Нет модуля '%s'. Напиши %smodules", name, PREFIX));
         return m;
     }
 
     private static void help() {
-        ChatUtil.info("Commands:");
-        line(".toggle <module>", "turn a module on/off");
-        line(".bind <module> <key|mouse3|none>", "bind a key");
-        line(".binds", "list binds");
-        line(".settings <module>", "list settings");
-        line(".settings <module> <setting> <value>", "change a setting");
-        line(".reset <module>", "reset a module's settings to defaults");
-        line(".reset bind <module> | .reset hud [module] | .reset all", "");
-        line(".modules", "list modules");
-        line(".profile [list|<name>|create <name>|delete <name>]", "settings profiles");
-        line(".config export | .config import [code]", "share settings with a code (clipboard)");
-        line(".gui / .hud", "open ClickGUI / HUD editor");
+        String mod = arg("module", "<модуль>"), set = arg("setting", "<настройка>"), val = arg("value", "<значение>");
+        String nm = arg("name", "<имя>");
+        ChatUtil.info(Lang.ui("cmd-commands", "Команды:"));
+        line(".toggle " + mod, Lang.ui("cmd-help-toggle", "включить/выключить модуль"));
+        line(".bind " + mod + " " + arg("key", "<клавиша|mouse3|none>"), Lang.ui("cmd-help-bind", "назначить клавишу"));
+        line(".binds", Lang.ui("cmd-help-binds", "список биндов"));
+        line(".settings " + mod, Lang.ui("cmd-help-settings", "список настроек"));
+        line(".settings " + mod + " " + set + " " + val, Lang.ui("cmd-help-set", "изменить настройку"));
+        line(".reset " + mod, Lang.ui("cmd-help-reset", "сбросить настройки модуля"));
+        line(".reset bind " + mod + " | .reset hud [" + strip(mod) + "] | .reset all", Lang.ui("cmd-help-reset-other", "сбросить бинд, позиции HUD или всё"));
+        line(".modules", Lang.ui("cmd-help-modules", "список модулей"));
+        line(".profile [list|" + nm + "|create " + nm + "|delete " + nm + "]", Lang.ui("cmd-help-profile", "профили настроек"));
+        line(".config export | .config import " + arg("code", "[код]"), Lang.ui("cmd-help-config", "поделиться настройками через код (буфер обмена)"));
+        line(".gui / .hud", Lang.ui("cmd-help-gui", "открыть ClickGUI / редактор HUD"));
+    }
+
+    /** Localized, formatted chat string: {@code f("cmd-x", "Текст %s", arg)}. */
+    private static String f(String key, String russian, Object... args) {
+        return String.format(Lang.ui(key, russian), args);
+    }
+
+    private static String arg(String key, String russian) {
+        return Lang.ui("cmd-arg-" + key, russian);
+    }
+
+    /** "<модуль>" -> "модуль". */
+    private static String strip(String bracketed) {
+        return bracketed.length() > 2 ? bracketed.substring(1, bracketed.length() - 1) : bracketed;
+    }
+
+    private static void usage(String usage) {
+        ChatUtil.error(f("cmd-usage", "Использование: %s", usage));
     }
 
     private static void line(String usage, String description) {
@@ -80,7 +101,7 @@ public final class CommandManager {
 
     private static void toggle(String[] args) {
         if (args.length < 1) {
-            ChatUtil.error("Usage: .toggle <module>");
+            usage(".toggle " + arg("module", "<модуль>"));
             return;
         }
         Module m = module(args[0]);
@@ -89,95 +110,95 @@ public final class CommandManager {
 
     private static void bind(String[] args) {
         if (args.length < 2) {
-            ChatUtil.error("Usage: .bind <module> <key|mouse3|none>");
+            usage(".bind " + arg("module", "<модуль>") + " " + arg("key", "<клавиша|mouse3|none>"));
             return;
         }
         Module m = module(args[0]);
         if (m == null) return;
         Integer key = Keys.parse(args[1]);
         if (key == null) {
-            ChatUtil.error("Unknown key '" + args[1] + "'");
+            ChatUtil.error(f("cmd-unknown-key", "Неизвестная клавиша '%s'", args[1]));
             return;
         }
         m.setKey(key);
-        ChatUtil.info(m.title + " bound to " + Keys.name(key));
+        ChatUtil.info(f("cmd-bound", "%s: клавиша %s", m.displayTitle(), Keys.name(key)));
     }
 
     private static void binds() {
         int n = 0;
         for (Module m : ModuleManager.all()) {
             if (m.getKey() == Keys.NONE) continue;
-            ChatUtil.send(Text.literal(m.title).formatted(Formatting.WHITE).append(Text.literal(" - " + Keys.name(m.getKey())).formatted(Formatting.GRAY)));
+            ChatUtil.send(Text.literal(m.displayTitle()).formatted(Formatting.WHITE).append(Text.literal(" - " + Keys.name(m.getKey())).formatted(Formatting.GRAY)));
             n++;
         }
-        if (n == 0) ChatUtil.info("No binds.");
+        if (n == 0) ChatUtil.info(Lang.ui("cmd-no-binds", "Биндов нет."));
     }
 
     private static void settings(String[] args) {
         if (args.length < 1) {
-            ChatUtil.error("Usage: .settings <module> [setting] [value]");
+            usage(".settings " + arg("module", "<модуль>") + " [" + strip(arg("setting", "<настройка>")) + "] [" + strip(arg("value", "<значение>")) + "]");
             return;
         }
         Module m = module(args[0]);
         if (m == null) return;
 
         if (args.length == 1) {
-            ChatUtil.info(m.title + " settings:");
+            ChatUtil.info(f("cmd-settings-of", "Настройки %s:", m.displayTitle()));
             for (Setting<?> s : m.getSettings()) {
                 ChatUtil.send(Text.literal(s.name).withColor(Theme.accent() & 0xFFFFFF)
                     .append(Text.literal(" = " + s.asString()).formatted(Formatting.WHITE))
-                    .append(Text.literal("  (" + s.description + ")").formatted(Formatting.DARK_GRAY)));
+                    .append(Text.literal("  (" + s.displayDescription() + ")").formatted(Formatting.DARK_GRAY)));
             }
             return;
         }
 
         Setting<?> s = m.getSetting(args[1]);
         if (s == null) {
-            ChatUtil.error("No setting '" + args[1] + "' in " + m.title);
+            ChatUtil.error(f("cmd-no-setting", "Нет настройки '%s' в %s", args[1], m.displayTitle()));
             return;
         }
         if (args.length == 2) {
-            ChatUtil.info(m.title + " " + s.name + " = " + s.asString());
+            ChatUtil.info(m.displayTitle() + " " + s.name + " = " + s.asString());
             return;
         }
         String value = String.join(" ", Arrays.copyOfRange(args, 2, args.length));
         if (value.equalsIgnoreCase("reset") || value.equalsIgnoreCase("default")) s.reset();
         else if (!s.parse(value)) {
-            ChatUtil.error("Invalid value '" + value + "' for " + s.name);
+            ChatUtil.error(f("cmd-invalid-value", "Неверное значение '%s' для %s", value, s.name));
             return;
         }
-        ChatUtil.info(m.title + " " + s.name + " = " + s.asString());
+        ChatUtil.info(m.displayTitle() + " " + s.name + " = " + s.asString());
     }
 
     private static void reset(String[] args) {
         if (args.length < 1) {
-            ChatUtil.error("Usage: .reset <module> | .reset bind <module> | .reset hud [module] | .reset all");
+            { String mod = arg("module", "<модуль>"); usage(".reset " + mod + " | .reset bind " + mod + " | .reset hud [" + strip(mod) + "] | .reset all"); }
             return;
         }
         switch (args[0].toLowerCase()) {
             case "bind" -> {
                 if (args.length < 2) {
-                    ChatUtil.error("Usage: .reset bind <module>");
+                    usage(".reset bind " + arg("module", "<модуль>"));
                     return;
                 }
                 Module m = module(args[1]);
                 if (m == null) return;
                 m.setKey(m.getDefaultKey());
-                ChatUtil.info("Reset bind of " + m.title + " (" + Keys.name(m.getKey()) + ")");
+                ChatUtil.info(f("cmd-reset-bind", "Бинд %s сброшен (%s)", m.displayTitle(), Keys.name(m.getKey())));
             }
             case "hud" -> {
                 if (args.length >= 2) {
                     Module m = module(args[1]);
                     if (m == null) return;
                     if (!HudManager.hudModules().contains(m)) {
-                        ChatUtil.error(m.title + " has no HUD element");
+                        ChatUtil.error(f("cmd-no-hud", "У модуля %s нет элемента HUD", m.displayTitle()));
                         return;
                     }
                     HudManager.resetPosition(m);
-                    ChatUtil.info("Reset HUD position of " + m.title);
+                    ChatUtil.info(f("cmd-reset-hud", "Позиция HUD %s сброшена", m.displayTitle()));
                 } else {
                     HudManager.resetAllPositions();
-                    ChatUtil.info("Reset all HUD positions");
+                    ChatUtil.info(Lang.ui("cmd-reset-hud-all", "Все позиции HUD сброшены"));
                 }
             }
             case "all" -> {
@@ -186,20 +207,20 @@ public final class CommandManager {
                     m.setKey(m.getDefaultKey());
                 }
                 HudManager.resetAllPositions();
-                ChatUtil.info("Reset all settings, binds and HUD positions");
+                ChatUtil.info(Lang.ui("cmd-reset-all", "Все настройки, бинды и позиции HUD сброшены"));
             }
             default -> {
                 Module m = module(args[0]);
                 if (m == null) return;
                 m.resetSettings();
-                ChatUtil.info("Reset settings of " + m.title);
+                ChatUtil.info(f("cmd-reset-settings", "Настройки %s сброшены", m.displayTitle()));
             }
         }
     }
 
     private static void profile(String[] args) {
         if (args.length == 0 || args[0].equalsIgnoreCase("list")) {
-            MutableText t = Text.literal("Профили: ").formatted(Formatting.GRAY);
+            MutableText t = Text.literal(Lang.ui("cmd-profiles", "Профили: ")).formatted(Formatting.GRAY);
             boolean first = true;
             for (String p : io.github.qan4ur.vetmos.config.ConfigManager.listProfiles()) {
                 if (!first) t.append(Text.literal(", ").formatted(Formatting.DARK_GRAY));
@@ -214,24 +235,24 @@ public final class CommandManager {
         String name = args.length > 1 ? String.join(" ", Arrays.copyOfRange(args, 1, args.length)) : null;
         switch (sub) {
             case "create", "new" -> {
-                if (name == null || !io.github.qan4ur.vetmos.config.ConfigManager.createProfile(name, true)) ChatUtil.error("Не удалось создать профиль (имя занято или некорректно)");
-                else ChatUtil.info("Профиль '" + name + "' создан (копия текущего)");
+                if (name == null || !io.github.qan4ur.vetmos.config.ConfigManager.createProfile(name, true)) ChatUtil.error(Lang.ui("cmd-profile-create-failed", "Не удалось создать профиль (имя занято или некорректно)"));
+                else ChatUtil.info(f("cmd-profile-created", "Профиль '%s' создан (копия текущего)", name));
             }
             case "delete", "remove" -> {
-                if (name == null || !io.github.qan4ur.vetmos.config.ConfigManager.deleteProfile(name)) ChatUtil.error("Не удалось удалить профиль (текущий удалить нельзя)");
-                else ChatUtil.info("Профиль '" + name + "' удалён");
+                if (name == null || !io.github.qan4ur.vetmos.config.ConfigManager.deleteProfile(name)) ChatUtil.error(Lang.ui("cmd-profile-delete-failed", "Не удалось удалить профиль (текущий удалить нельзя)"));
+                else ChatUtil.info(f("cmd-profile-deleted", "Профиль '%s' удалён", name));
             }
             default -> {
                 String target = String.join(" ", args);
-                if (io.github.qan4ur.vetmos.config.ConfigManager.switchProfile(target)) ChatUtil.info("Профиль: " + target);
-                else ChatUtil.error("Некорректное имя профиля");
+                if (io.github.qan4ur.vetmos.config.ConfigManager.switchProfile(target)) ChatUtil.info(f("cmd-profile-switched", "Профиль: %s", target));
+                else ChatUtil.error(Lang.ui("cmd-profile-invalid", "Некорректное имя профиля"));
             }
         }
     }
 
     private static void config(String[] args) {
         if (args.length == 0) {
-            ChatUtil.error("Использование: .config export | .config import [код]");
+            usage(".config export | .config import " + arg("code", "[код]"));
             return;
         }
         net.minecraft.client.MinecraftClient mc = net.minecraft.client.MinecraftClient.getInstance();
@@ -239,20 +260,20 @@ public final class CommandManager {
             case "export" -> {
                 String code = io.github.qan4ur.vetmos.config.ConfigManager.exportCode();
                 mc.keyboard.setClipboard(code);
-                ChatUtil.info("Код настроек скопирован в буфер обмена (" + code.length() + " символов). Отправь его другу.");
+                ChatUtil.info(f("cmd-config-exported", "Код настроек скопирован в буфер обмена (%s символов). Отправь его другу.", code.length()));
             }
             case "import" -> {
                 String code = args.length > 1 ? args[1] : mc.keyboard.getClipboard();
-                if (io.github.qan4ur.vetmos.config.ConfigManager.importCode(code)) ChatUtil.info("Настройки импортированы в профиль '" + io.github.qan4ur.vetmos.config.ConfigManager.currentProfile() + "'");
-                else ChatUtil.error("Неверный код настроек");
+                if (io.github.qan4ur.vetmos.config.ConfigManager.importCode(code)) ChatUtil.info(f("cmd-config-imported", "Настройки импортированы в профиль '%s'", io.github.qan4ur.vetmos.config.ConfigManager.currentProfile()));
+                else ChatUtil.error(Lang.ui("cmd-config-invalid", "Неверный код настроек"));
             }
-            default -> ChatUtil.error("Использование: .config export | .config import [код]");
+            default -> usage(".config export | .config import " + arg("code", "[код]"));
         }
     }
 
     private static void modules() {
         for (Category c : Category.values()) {
-            MutableText t = Text.literal(c.title + ": ").withColor(Theme.accent() & 0xFFFFFF);
+            MutableText t = Text.literal(c.displayTitle() + ": ").withColor(Theme.accent() & 0xFFFFFF);
             boolean first = true;
             for (Module m : ModuleManager.inCategory(c)) {
                 if (!first) t.append(Text.literal(", ").formatted(Formatting.DARK_GRAY));

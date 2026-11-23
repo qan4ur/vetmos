@@ -33,7 +33,7 @@ public class CooldownsHud extends Module implements HudModule {
         Layout(String title) { this.title = title; }
 
         @Override
-        public String toString() { return title; }
+        public String toString() { return io.github.qan4ur.vetmos.util.Lang.tr("enum:Layout." + name(), title); }
     }
 
     public enum Style {
@@ -44,7 +44,7 @@ public class CooldownsHud extends Module implements HudModule {
         Style(String title) { this.title = title; }
 
         @Override
-        public String toString() { return title; }
+        public String toString() { return io.github.qan4ur.vetmos.util.Lang.tr("enum:Style." + name(), title); }
     }
 
     private static final String G = "Основное", I = "Предметы", C = "Цвета";

@@ -16,6 +16,7 @@ public final class Modules {
         ModuleManager.register(new HitParticles());
         ModuleManager.register(new KillEffect());
         ModuleManager.register(new TotemPopCounter());
+        ModuleManager.register(new HitSounds());
 
         // HUD
         ModuleManager.register(new ArmorHud());
@@ -26,14 +27,26 @@ public final class Modules {
         ModuleManager.register(new ComboCounter());
         ModuleManager.register(new Keystrokes());
         ModuleManager.register(new LowHpWarning());
+        ModuleManager.register(new ItemCounter());
+        ModuleManager.register(new io.github.qan4ur.vetmos.modules.hud.info.FpsHud());
+        ModuleManager.register(new io.github.qan4ur.vetmos.modules.hud.info.PingHud());
+        ModuleManager.register(new io.github.qan4ur.vetmos.modules.hud.info.CoordsHud());
+        ModuleManager.register(new io.github.qan4ur.vetmos.modules.hud.info.DirectionHud());
+        ModuleManager.register(new io.github.qan4ur.vetmos.modules.hud.info.SpeedHud());
+        ModuleManager.register(new io.github.qan4ur.vetmos.modules.hud.info.ClockHud());
+        ModuleManager.register(new io.github.qan4ur.vetmos.modules.hud.info.BiomeHud());
 
         // Рендер
         ModuleManager.register(new CustomCrosshair());
         ModuleManager.register(new SwingAnimations());
         ModuleManager.register(new GlintColor());
+        ModuleManager.register(new NoHurtCam());
+        ModuleManager.register(new LowFire());
+        ModuleManager.register(new LowShield());
 
         // Клиент
         ModuleManager.register(new io.github.qan4ur.vetmos.modules.client.InterfaceModule());
+        ModuleManager.register(new io.github.qan4ur.vetmos.modules.client.ChatTweaks());
 
         // Мир
         ModuleManager.register(new BlockOutline());

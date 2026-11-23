@@ -298,7 +298,7 @@ public class ComboCounter extends Module implements HudModule {
 
         @Override
         public String toString() {
-            return title;
+            return io.github.qan4ur.vetmos.util.Lang.tr("enum:Label." + name(), title);
         }
     }
 }

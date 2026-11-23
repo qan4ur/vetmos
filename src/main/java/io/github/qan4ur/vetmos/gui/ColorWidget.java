@@ -72,7 +72,7 @@ public class ColorWidget extends SettingWidget<ColorSetting> {
 
         int color = setting.get();
         int sw = 18, sh = 8, sx = right() - sw, sy = y + (ROW - sh) / 2;
-        Paint.text(ctx, Paint.trim(setting.title, sx - x - 4), x, y + 3, textColor(hover));
+        Paint.text(ctx, Paint.trim(title(), sx - x - 4), x, y + 3, textColor(hover));
         if (hover > 0.02f || open.raw() > 0) Paint.glow(ctx, sx, sy, sw, sh, 2, Anim.alpha(color | 0xFF000000, 0.35f * Math.max(hover, open.eased())), 3);
         Paint.checker(ctx, sx, sy, sw, sh, 2);
         Paint.rect(ctx, sx, sy, sw, sh, color);
@@ -82,7 +82,7 @@ public class ColorWidget extends SettingWidget<ColorSetting> {
 
         // reset button; tooltip only for the header row (offered after finish so the color info wins)
         finish(ctx, mx, Paint.inside(mx, my, x, y, w, ROW) ? my : NO_MOUSE, tip);
-        if (rowHov) tip.offer(setting, setting.title, setting.description + " (" + hex(color) + ", A " + setting.alpha() + ")");
+        if (rowHov) tip.offer(setting, title(), hex(color) + ", A " + setting.alpha() + " — " + io.github.qan4ur.vetmos.util.Lang.ui("color-click", "нажмите, чтобы открыть палитру"));
     }
 
     private void renderPicker(DrawContext ctx, int mx, int my) {

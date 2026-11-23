@@ -189,7 +189,7 @@ public class CrosshairHpIndicator extends Module implements HudModule {
 
         @Override
         public String toString() {
-            return title;
+            return io.github.qan4ur.vetmos.util.Lang.tr("enum:DisplayMode." + name(), title);
         }
     }
 }
