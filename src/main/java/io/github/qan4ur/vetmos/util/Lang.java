@@ -44,12 +44,15 @@ public final class Lang {
         return tr("ui:" + key, russian);
     }
 
-    /** Registers English translations (called from {@link LangEn}). */
-    static void en(String key, String english) {
+    /** Registers an English translation. */
+    public static void en(String key, String english) {
         EN.put(key, english);
     }
 
     static {
-        LangEn.register();
+        LangEn.register();        // existing modules, groups, categories, chat/commands
+        LangEnInfo.register();    // info HUD + item counter modules
+        LangEnTweaks.register();  // combat / chat tweak modules
+        io.github.qan4ur.vetmos.gui.GuiLang.register(); // fixed GUI strings (ui:...)
     }
 }
