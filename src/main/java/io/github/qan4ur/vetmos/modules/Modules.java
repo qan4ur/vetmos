@@ -47,6 +47,7 @@ public final class Modules {
         // Клиент
         ModuleManager.register(new io.github.qan4ur.vetmos.modules.client.InterfaceModule());
         ModuleManager.register(new io.github.qan4ur.vetmos.modules.client.ChatTweaks());
+        ModuleManager.register(new io.github.qan4ur.vetmos.modules.client.MacrosModule());
 
         // Мир
         ModuleManager.register(new BlockOutline());

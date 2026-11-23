@@ -278,6 +278,8 @@ public final class ConfigManager {
                 HudPosition pos = hud.has(module.name) ? HudPosition.fromJson(hud.getAsJsonObject(module.name), def) : def.copy();
                 HudManager.positions().put(module.name, pos);
             }
+
+            io.github.qan4ur.vetmos.macro.MacroManager.fromJson(root != null && root.has("macros") ? root.getAsJsonArray("macros") : null);
         } finally {
             loading = false;
             dirty = false;
@@ -303,6 +305,7 @@ public final class ConfigManager {
         JsonObject hud = new JsonObject();
         for (Module module : HudManager.hudModules()) hud.add(module.name, HudManager.getPosition(module).toJson());
         root.add("hud", hud);
+        root.add("macros", io.github.qan4ur.vetmos.macro.MacroManager.toJson());
         return root;
     }
 

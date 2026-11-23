@@ -69,6 +69,7 @@ public final class ModuleManager {
     public static void onKeyPressed(int key) {
         if (key == io.github.qan4ur.vetmos.util.Keys.NONE) return;
         for (Module m : MODULES) if (m.getKey() == key) m.toggleWithFeedback();
+        io.github.qan4ur.vetmos.macro.MacroManager.onKey(key);
     }
 
     /** Runs a module hook; a crashing module is disabled instead of crashing the game. */

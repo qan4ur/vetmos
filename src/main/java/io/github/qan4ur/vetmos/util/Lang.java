@@ -56,6 +56,7 @@ public final class Lang {
         LangEnCombat.register();  // damage numbers, hitboxes
         LangEnVanilla.register(); // movable vanilla HUD (scoreboard, boss bar, titles)
         LangEnZoom.register();    // zoom
+        LangEnMacros.register();  // macros
         io.github.qan4ur.vetmos.gui.GuiLang.register(); // fixed GUI strings (ui:...)
     }
 }

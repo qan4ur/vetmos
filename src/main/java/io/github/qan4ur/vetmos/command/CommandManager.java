@@ -41,6 +41,7 @@ public final class CommandManager {
                 case "modules", "list" -> modules();
                 case "profile", "profiles", "p" -> profile(rest);
                 case "config", "cfg" -> config(rest);
+                case "macro", "macros", "m" -> macro(rest);
                 case "gui" -> Vetmos.openScreenNextTick(Vetmos.createClickGui());
                 case "hud" -> Vetmos.openScreenNextTick(Vetmos.createHudEditor());
                 default -> ChatUtil.error(f("cmd-unknown", "Неизвестная команда '%s'. Напиши %shelp", cmd, PREFIX));
@@ -65,6 +66,8 @@ public final class CommandManager {
         line(".toggle " + mod, Lang.ui("cmd-help-toggle", "включить/выключить модуль"));
         line(".bind " + mod + " " + arg("key", "<клавиша|mouse3|none>"), Lang.ui("cmd-help-bind", "назначить клавишу"));
         line(".binds", Lang.ui("cmd-help-binds", "список биндов"));
+        line(".macro add <клавиша> <кд> <текст>", Lang.ui("cmd-help-macro-add", "макрос: клавиша → сообщение или /команда, кд в секундах"));
+        line(".macro list | remove <номер> | clear", Lang.ui("cmd-help-macro", "список / удалить / очистить макросы"));
         line(".settings " + mod, Lang.ui("cmd-help-settings", "список настроек"));
         line(".settings " + mod + " " + set + " " + val, Lang.ui("cmd-help-set", "изменить настройку"));
         line(".reset " + mod, Lang.ui("cmd-help-reset", "сбросить настройки модуля"));
@@ -268,6 +271,61 @@ public final class CommandManager {
                 else ChatUtil.error(Lang.ui("cmd-config-invalid", "Неверный код настроек"));
             }
             default -> usage(".config export | .config import " + arg("code", "[код]"));
+        }
+    }
+
+    private static void macro(String[] args) {
+        java.util.List<io.github.qan4ur.vetmos.macro.Macro> list = io.github.qan4ur.vetmos.macro.MacroManager.all();
+        String sub = args.length == 0 ? "list" : args[0].toLowerCase();
+        switch (sub) {
+            case "list" -> {
+                if (list.isEmpty()) {
+                    ChatUtil.info(Lang.ui("cmd-macro-empty", "Макросов нет. Добавь: .macro add <клавиша> <кд> <текст>"));
+                    return;
+                }
+                for (int i = 0; i < list.size(); i++) {
+                    io.github.qan4ur.vetmos.macro.Macro m = list.get(i);
+                    ChatUtil.send(Text.literal((i + 1) + ". ").formatted(Formatting.DARK_GRAY)
+                        .append(Text.literal(Keys.name(m.key)).withColor(Theme.accent() & 0xFFFFFF))
+                        .append(Text.literal(" → " + m.text).formatted(m.enabled ? Formatting.WHITE : Formatting.GRAY))
+                        .append(Text.literal(String.format(java.util.Locale.ROOT, "  (%.1fс)", m.cooldown)).formatted(Formatting.DARK_GRAY)));
+                }
+            }
+            case "add" -> {
+                if (args.length < 4) {
+                    ChatUtil.error(Lang.ui("cmd-macro-add-usage", "Использование: .macro add <клавиша> <кд в секундах> <текст или /команда>"));
+                    return;
+                }
+                Integer key = Keys.parse(args[1]);
+                if (key == null || key == Keys.NONE) {
+                    ChatUtil.error(f("cmd-unknown-key", "Неизвестная клавиша '%s'", args[1]));
+                    return;
+                }
+                double cd;
+                try {
+                    cd = Double.parseDouble(args[2].replace(',', '.'));
+                } catch (NumberFormatException e) {
+                    ChatUtil.error(Lang.ui("cmd-macro-bad-cd", "Кд должно быть числом секунд, например 1.5"));
+                    return;
+                }
+                String text = String.join(" ", Arrays.copyOfRange(args, 3, args.length));
+                io.github.qan4ur.vetmos.macro.MacroManager.add(key, text, cd);
+                ChatUtil.info(f("cmd-macro-added", "Макрос добавлен: %s → %s", Keys.name(key), text));
+            }
+            case "remove", "delete" -> {
+                try {
+                    int i = Integer.parseInt(args[1]) - 1;
+                    io.github.qan4ur.vetmos.macro.MacroManager.remove(list.get(i));
+                    ChatUtil.info(Lang.ui("cmd-macro-removed", "Макрос удалён"));
+                } catch (RuntimeException e) {
+                    ChatUtil.error(Lang.ui("cmd-macro-remove-usage", "Использование: .macro remove <номер из .macro list>"));
+                }
+            }
+            case "clear" -> {
+                io.github.qan4ur.vetmos.macro.MacroManager.clear();
+                ChatUtil.info(Lang.ui("cmd-macro-cleared", "Все макросы удалены"));
+            }
+            default -> ChatUtil.error(Lang.ui("cmd-macro-usage", "Использование: .macro list | add <клавиша> <кд> <текст> | remove <номер> | clear"));
         }
     }
 
