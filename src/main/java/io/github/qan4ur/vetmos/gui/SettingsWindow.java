@@ -46,7 +46,7 @@ public class SettingsWindow {
     final SearchField search = new SearchField();
     private int tab;
     private float scroll, scrollTarget;
-    private float switchT, switchHover, tabAnimY = -1;
+    private float switchT, switchHover, tabAnimY = -1, tabFade = 1;
     private final float[] tabHover;
 
     // layout of the last frame (virtual coordinates)
@@ -116,6 +116,11 @@ public class SettingsWindow {
         open.set(false);
         dragging = false;
         if (KeybindWidget.listening == keybind) KeybindWidget.listening = null;
+    }
+
+    /** Eased open amount 0..1 (for the dim layer behind the window). */
+    public float openAmount() {
+        return open.on() ? Anim.easeOutCubic(open.raw()) : Anim.easeInOutCubic(open.raw());
     }
 
     public boolean isClosing() {
@@ -225,19 +230,15 @@ public class SettingsWindow {
         Paint.alpha = old * e;
         var m = ctx.getMatrices();
         m.pushMatrix();
-        float s = 0.92f + 0.08f * e;
+        // open: fade + 4px slide-up + 0.97 -> 1 scale
+        float s = 0.97f + 0.03f * e;
         m.translate(x + w / 2f, y + h / 2f);
         m.scale(s, s);
-        m.translate(-(x + w / 2f), -(y + h / 2f) + (1 - e) * 8);
+        m.translate(-(x + w / 2f), -(y + h / 2f) + (1 - e) * 4);
 
-        // frame
-        Paint.glow(ctx, x, y, w, h, RADIUS, 0xD0000000, 10);
-        Paint.glow(ctx, x, y, w, h, RADIUS, Palette.accentA(40), 3);
-        Paint.roundGradient(ctx, x, y, w, h, RADIUS, 0xF8161616, 0xF80C0C0C);
-        Paint.roundGradient(ctx, x, y, w, HEADER_H, RADIUS, Palette.HEADER_TOP, Palette.HEADER_BOTTOM, true, false);
-        Paint.rect(ctx, x + RADIUS, y + 1, w - RADIUS * 2, 1, Palette.SHEEN);
-        accentLine(ctx, x, y + HEADER_H - 1, w);
-        Paint.outline(ctx, x, y, w, h, RADIUS, Palette.OUTLINE);
+        // frame: translucent panel, thin double frame, a separator under the header
+        Paint.panel(ctx, x, y, w, h, Paint.MODAL_BG);
+        Paint.rect(ctx, x + 4, y + HEADER_H - 1, w - 8, 1, 0x30FFFFFF);
 
         renderHeader(ctx, mx, my, tip);
 
@@ -289,11 +290,10 @@ public class SettingsWindow {
         keybind.y = cy - 1;
         // switch + title
         int swX = bx - 26, swY = cy + 3;
-        Text title = Text.literal(module.displayTitle()).formatted(Formatting.BOLD);
         int titleMax = swX - (x + 10) - 6;
-        String t = Paint.trim(module.displayTitle(), Math.max(20, titleMax - 6));
-        Paint.text(ctx, Text.literal(t).formatted(Formatting.BOLD), x + 10, y + 9, Palette.TEXT);
-        int titleEnd = x + 10 + Math.min(Paint.font().getWidth(title), titleMax) + 8;
+        Text title = Paint.trim(Paint.styledBold(module.displayTitle()), Math.max(20, titleMax - 6));
+        Paint.text(ctx, title, x + 10, y + 9, Palette.TEXT);
+        int titleEnd = x + 10 + Math.min(Paint.width(title), titleMax) + 8;
         swX = Math.min(swX, Math.max(titleEnd, swX));
 
         boolean swHov = Paint.inside(mx, my, swX - 2, swY - 3, 22, 14);
@@ -301,10 +301,7 @@ public class SettingsWindow {
         switchT = Anim.approach(switchT, module.isEnabled() ? 1 : 0, 16);
         float se = Anim.easeInOutCubic(switchT);
         int tw = 18, th = 9;
-        if (se > 0.02f) Paint.glow(ctx, swX, swY, tw, th, 4, Anim.alpha(Palette.glow(), se), 3);
-        Paint.round(ctx, swX, swY, tw, th, 4, Anim.mix(Palette.TRACK, Palette.accent(), se));
-        Paint.outline(ctx, swX, swY, tw, th, 4, Anim.mix(Palette.CONTROL_LINE, Palette.accentBright(), Math.max(se * 0.6f, switchHover * 0.6f)));
-        Paint.round(ctx, Math.round(swX + 1 + se * (tw - th)), swY + 1, th - 2, th - 2, 3, Anim.mix(0xFF9A9A9A, Palette.onAccent(), se));
+        Paint.toggle(ctx, swX, swY, tw, th, se, switchHover);
         if (swHov) tip.offer("win-switch", module.isEnabled() ? Lang.ui("module-on", "Модуль включён — нажмите, чтобы выключить.") : Lang.ui("module-off", "Модуль выключен — нажмите, чтобы включить."));
         switchX = swX;
         switchY = swY;
@@ -317,24 +314,27 @@ public class SettingsWindow {
 
     private void renderTabs(DrawContext ctx, int mx, int my, int tx, int ty, int th, Tooltip tip) {
         boolean searching = !search.text().isBlank();
-        Paint.round(ctx, tx, ty, TAB_W, th, 4, 0x60000000);
+        // hotbar-like selector: cells with thin separators, the selected one framed by a 2px light square
+        Paint.inset(ctx, tx, ty, TAB_W, th);
         int target = ty + 3 + tab * TAB_H;
         if (tabAnimY < 0) tabAnimY = target;
-        tabAnimY = Anim.approach(tabAnimY, target, 20);
-        if (!searching) {
-            int ay = Math.round(tabAnimY);
-            Paint.round(ctx, tx + 2, ay, TAB_W - 4, TAB_H - 1, 3, Palette.accentA(40));
-            Paint.rect(ctx, tx + 2, ay + 3, 2, TAB_H - 7, Theme.accentAt((float) tab / Math.max(1, groups.size())) | 0xFF000000);
-        }
+        tabAnimY = Anim.approach(tabAnimY, target, 22);
         ctx.enableScissor(tx, ty, tx + TAB_W, ty + th);
         for (int i = 0; i < groups.size(); i++) {
             int ry = ty + 3 + i * TAB_H;
             boolean hov = Paint.inside(mx, my, tx + 2, ry, TAB_W - 4, TAB_H - 1) && my < ty + th;
             tabHover[i] = Anim.approach(tabHover[i], hov ? 1 : 0, 18);
-            if (tabHover[i] > 0.01f) Paint.round(ctx, tx + 2, ry, TAB_W - 4, TAB_H - 1, 3, Anim.withAlpha(0xFFFFFFFF, Math.round(14 * tabHover[i])));
+            if (tabHover[i] > 0.01f) Paint.rect(ctx, tx + 2, ry, TAB_W - 4, TAB_H - 1, Anim.withAlpha(0xFFFFFFFF, Math.round(14 * tabHover[i])));
+            if (i > 0) Paint.rect(ctx, tx + 6, ry - 1, TAB_W - 12, 1, 0x1EFFFFFF);
             boolean sel = i == tab && !searching;
             int c = searching ? Palette.TEXT_FAINT : sel ? Palette.TEXT : Anim.mix(Palette.TEXT_MUTED, Palette.TEXT_IDLE, tabHover[i]);
             Paint.text(ctx, Paint.trim(groupTitle(groups.get(i)), TAB_W - 14), tx + 8, ry + 4, c);
+        }
+        if (!searching) {
+            int ay = Math.round(tabAnimY);
+            Paint.outline(ctx, tx + 1, ay - 1, TAB_W - 2, TAB_H + 1, 0, 0xE0D8D8D8);
+            Paint.outline(ctx, tx + 2, ay, TAB_W - 4, TAB_H - 1, 0, 0xE0D8D8D8);
+            Paint.rect(ctx, tx + 3, ay + 3, 2, TAB_H - 7, Theme.accentAt((float) tab / Math.max(1, groups.size())) | 0xFF000000);
         }
         ctx.disableScissor();
     }
@@ -362,6 +362,14 @@ public class SettingsWindow {
         scroll = Math.max(0, Math.min(maxScroll, Anim.approach(scroll, scrollTarget, 16)));
 
         ctx.enableScissor(listX - 2, listY, listX + listW + 2, listY + listH);
+        // tab switch: the content cross-fades and slides in a little
+        tabFade = Anim.approach(tabFade, 1, 12);
+        float tf = Anim.easeOutCubic(tabFade);
+        float oldA = Paint.alpha;
+        Paint.alpha = oldA * (0.25f + 0.75f * tf);
+        var lm = ctx.getMatrices();
+        lm.pushMatrix();
+        lm.translate((1 - tf) * 6, 0);
         boolean in = Paint.inside(mx, my, listX - 2, listY, listW + 4, listH);
         int wmx = in ? mx : Widget.NO_MOUSE, wmy = in ? my : Widget.NO_MOUSE;
         int cy = listY + 2 - Math.round(scroll);
@@ -377,14 +385,16 @@ public class SettingsWindow {
             if (cy + hh > listY && cy < listY + listH) wd.render(ctx, wmx, wmy, tip);
             cy += hh;
         }
+        lm.popMatrix();
+        Paint.alpha = oldA;
         ctx.disableScissor();
 
         if (contentH > listH) {
             int trackH = listH - 4;
             int thumbH = Math.max(14, Math.round(trackH * (listH / (float) contentH)));
             int thumbY = listY + 2 + Math.round((trackH - thumbH) * (scroll / Math.max(1, maxScroll)));
-            Paint.round(ctx, listX + listW - 3, listY + 2, 2, trackH, 1, 0x40000000);
-            Paint.round(ctx, listX + listW - 3, thumbY, 2, thumbH, 1, Palette.accentA(180));
+            Paint.rect(ctx, listX + listW - 3, listY + 2, 2, trackH, 0x30FFFFFF);
+            Paint.rect(ctx, listX + listW - 3, thumbY, 2, thumbH, 0xC0D0D0D0);
         }
     }
 
@@ -392,12 +402,11 @@ public class SettingsWindow {
         int boxH = Math.min(ph - (resetPosition != null ? 22 : 0), Math.max(70, ph * 3 / 5));
         if (resetPosition == null && macroEditor == null) boxH = Math.min(boxH, 92);
         if (macroEditor != null) boxH = Math.min(ph - 24, 160);
-        Paint.round(ctx, px, py, pw, boxH, 4, 0xFF080808);
+        Paint.inset(ctx, px, py, pw, boxH);
         // faint grid
         for (int gx = px + 8; gx < px + pw; gx += 8) Paint.rect(ctx, gx, py + 1, 1, boxH - 2, 0x08FFFFFF);
         for (int gy = py + 8; gy < py + boxH; gy += 8) Paint.rect(ctx, px + 1, gy, pw - 2, 1, 0x08FFFFFF);
-        Paint.outline(ctx, px, py, pw, boxH, 4, Palette.OUTLINE);
-        Paint.textScaled(ctx, Lang.ui("preview", "Предпросмотр").toUpperCase(Locale.ROOT), px + 4, py + 3, 0.6f, Palette.TEXT_FAINT);
+        Paint.textScaled(ctx, Lang.ui("preview", "Предпросмотр"), px + 4, py + 3, 0.65f, 0xFF8A8A8A);
 
         if (module instanceof HudModule hud) {
             ctx.enableScissor(px + 1, py + 1, px + pw - 1, py + boxH - 1);
@@ -429,9 +438,8 @@ public class SettingsWindow {
             float pulse = 0.5f + 0.5f * (float) Math.sin(time * 2);
             int cx = px + pw / 2, cy = py + boxH / 2 - 8;
             int r = 13;
-            Paint.glow(ctx, cx - r, cy - r, r * 2, r * 2, r, Palette.accentA(Math.round((module.isEnabled() ? 60 : 20) + 30 * pulse)), 5);
-            Paint.circle(ctx, cx, cy, r, module.isEnabled() ? Anim.withAlpha(Palette.accent(), 60) : 0x30FFFFFF);
-            Paint.outline(ctx, cx - r, cy - r, r * 2, r * 2, r, module.isEnabled() ? Palette.accent() : 0x40FFFFFF);
+            Paint.circle(ctx, cx, cy, r, module.isEnabled() ? Anim.withAlpha(Palette.accent(), Math.round(40 + 20 * pulse)) : 0x20FFFFFF);
+            Paint.ring(ctx, cx, cy, r, module.isEnabled() ? Palette.accent() : 0x50FFFFFF);
             String icon = CategoryPanel.icon(module.category);
             var m = ctx.getMatrices();
             m.pushMatrix();
@@ -455,15 +463,14 @@ public class SettingsWindow {
         // the module description, always visible
         int dy = py + boxH + (resetPosition != null ? 22 : 6);
         int maxY = py + ph;
-        List<OrderedText> lines = Paint.font().wrapLines(StringVisitable.plain(module.displayDescription()), Math.round(pw / 0.75f));
+        List<OrderedText> lines = Paint.wrap(module.displayDescription(), Math.round(pw / 0.75f));
         var m = ctx.getMatrices();
         for (OrderedText line : lines) {
             if (dy + 7 > maxY) break;
             m.pushMatrix();
             m.translate(px, dy);
             m.scale(0.75f, 0.75f);
-            int c = Paint.a(Palette.TEXT_MUTED);
-            if ((c >>> 24) >= 4) ctx.drawText(Paint.font(), line, 0, 0, c, false);
+            Paint.line(ctx, line, 0, 0, Palette.TEXT_MUTED);
             m.popMatrix();
             dy += 7;
         }
@@ -479,13 +486,12 @@ public class SettingsWindow {
         int ty = py + 12;
         var m = ctx.getMatrices();
         for (String st : steps) {
-            for (OrderedText line : Paint.font().wrapLines(StringVisitable.plain(st), Math.round((pw - 10) / 0.7f))) {
+            for (OrderedText line : Paint.wrap(st, Math.round((pw - 10) / 0.7f))) {
                 if (ty + 7 > py + boxH - 2) return;
                 m.pushMatrix();
                 m.translate(px + 5, ty);
                 m.scale(0.7f, 0.7f);
-                int c = Paint.a(Palette.TEXT_SECONDARY);
-                if ((c >>> 24) >= 4) ctx.drawText(Paint.font(), line, 0, 0, c, false);
+                Paint.line(ctx, line, 0, 0, Palette.TEXT_SECONDARY);
                 m.popMatrix();
                 ty += 7;
             }
@@ -523,6 +529,7 @@ public class SettingsWindow {
                         tab = i;
                         LAST_TAB.put(module.name, i);
                         scroll = scrollTarget = 0;
+                        tabFade = 0;
                         Widget.click(1.15f);
                     }
                     search.setText("");

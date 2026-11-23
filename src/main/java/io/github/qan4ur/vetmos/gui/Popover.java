@@ -44,11 +44,12 @@ public abstract class Popover {
         Paint.alpha = old * e;
         var m = ctx.getMatrices();
         m.pushMatrix();
-        m.translate(0, (1 - e) * -5);
-        Paint.glow(ctx, x, y, w, h, 5, 0xC0000000, 6);
-        Paint.roundGradient(ctx, x, y, w, h, 5, 0xF81A1A1A, 0xF80E0E0E);
-        Paint.outline(ctx, x, y, w, h, 5, Palette.OUTLINE);
-        SettingsWindow.accentLine(ctx, x, y, w);
+        // fade + scale from the anchor (top-right corner, where the button is)
+        float sc = 0.95f + 0.05f * e;
+        m.translate(x + w, y - (1 - e) * 4);
+        m.scale(sc, sc);
+        m.translate(-(x + w), -y);
+        Paint.panel(ctx, x, y, w, h, Paint.POPOVER_BG);
         renderContent(ctx, mx, my, tip);
         m.popMatrix();
         Paint.alpha = old;

@@ -72,8 +72,7 @@ public class TextField implements TextInput {
         boolean hov = Paint.inside(mx, my, x, y, w, h);
         hover = Anim.approach(hover, hov ? 1 : 0, 16);
         focusAnim = Anim.approach(focusAnim, focused ? 1 : 0, 14);
-        Paint.round(ctx, x, y, w, h, 3, Anim.mix(0xE0101010, 0xF01A1A1A, Math.max(hover * 0.5f, focusAnim)));
-        Paint.outline(ctx, x, y, w, h, 3, Anim.mix(Anim.mix(Palette.CONTROL_LINE, Palette.CONTROL_LINE_HOVER, hover), Palette.accent(), focusAnim));
+        Paint.field(ctx, x, y, w, h, hover, focusAnim);
 
         int ix = innerX(), iw = innerW(), ty = y + (h - 8) / 2;
         int caretPx = Paint.width(text.substring(0, cursor));

@@ -32,7 +32,7 @@ public class DescribedWidget extends Widget {
         if (!text.equals(cachedText) || width != cachedWidth) {
             cachedText = text;
             cachedWidth = width;
-            lines = Paint.font().wrapLines(StringVisitable.plain(text), Math.round(width / SCALE));
+            lines = Paint.wrap(text, Math.round(width / SCALE));
         }
         return lines;
     }
@@ -55,8 +55,7 @@ public class DescribedWidget extends Widget {
             m.pushMatrix();
             m.translate(x, ty);
             m.scale(SCALE, SCALE);
-            int c = Paint.a(Palette.TEXT_MUTED);
-            if ((c >>> 24) >= 4) ctx.drawText(Paint.font(), line, 0, 0, c, false);
+            Paint.line(ctx, line, 0, 0, Palette.TEXT_MUTED);
             m.popMatrix();
             ty += LINE_H;
         }

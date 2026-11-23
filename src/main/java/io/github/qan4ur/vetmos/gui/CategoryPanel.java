@@ -118,33 +118,15 @@ public class CategoryPanel {
         boolean hh = Paint.inside(mx, my, x, y, WIDTH, HEADER_H);
         headerHover = Anim.approach(headerHover, hh || dragging ? 1 : 0, 16);
 
-        // shadow + glow
-        Paint.glow(ctx, x, y, WIDTH, total, RADIUS, Palette.SHADOW, 6);
-        Paint.glow(ctx, x, y, WIDTH, total, RADIUS, Palette.accentA(Math.round(28 + 40 * headerHover)), 3);
+        // translucent panel with a thin double frame; the title is plain muted text top-left
+        Paint.panel(ctx, x, y, WIDTH, total);
+        if (headerHover > 0.01f) Paint.rect(ctx, x + 2, y + 2, WIDTH - 4, HEADER_H - 3, Anim.withAlpha(0xFFFFFFFF, Math.round(10 * headerHover)));
+        if (bodyH > 0) Paint.rect(ctx, x + 4, y + HEADER_H - 1, WIDTH - 8, 1, Anim.alpha(0x30FFFFFF, f));
 
-        // body
-        if (bodyH > 0) {
-            Paint.roundGradient(ctx, x, y + HEADER_H - RADIUS, WIDTH, bodyH + RADIUS, RADIUS, Palette.PANEL_TOP, Palette.PANEL_BOTTOM, false, true);
-        }
-
-        // header
-        boolean roundBottom = bodyH <= 0;
-        Paint.roundGradient(ctx, x, y, WIDTH, HEADER_H, RADIUS,
-            Anim.mix(Palette.HEADER_TOP, Palette.HEADER_TOP_HOVER, headerHover), Anim.mix(Palette.HEADER_BOTTOM, Palette.HEADER_BOTTOM_HOVER, headerHover), true, roundBottom);
-        Paint.rect(ctx, x + RADIUS, y + 1, WIDTH - RADIUS * 2, 1, Palette.SHEEN);
-        if (bodyH > 0) {
-            Paint.rect(ctx, x, y + HEADER_H - 1, WIDTH, 1, Anim.alpha(Palette.accentA(200), f));
-            Paint.gradientV(ctx, x, y + HEADER_H, WIDTH, 4, Anim.alpha(Palette.accentA(40), f), Palette.accentA(0));
-        }
-        Paint.outline(ctx, x, y, WIDTH, total, RADIUS, Palette.OUTLINE);
-
-        Text title = Text.literal(category.displayTitle()).formatted(Formatting.BOLD);
-        int tw = Paint.font().getWidth(title);
         String ic = icon(category);
         int iw = Paint.width(ic);
-        int startX = x + (WIDTH - tw - iw - 5) / 2;
-        Paint.text(ctx, ic, startX, y + 6, Palette.accent());
-        Paint.text(ctx, title, startX + iw + 5, y + 6, Palette.TEXT);
+        Paint.text(ctx, ic, x + 6, y + 6, Anim.mix(Palette.TEXT_MUTED, Palette.accent(), 0.5f + 0.5f * headerHover));
+        Paint.text(ctx, category.displayTitle(), x + 6 + iw + 4, y + 6, Anim.mix(0xFF8A8A8A, 0xFFBDBDBD, headerHover));
 
         int enabled = 0;
         for (ModuleEntry e : entries) if (e.module.isEnabled()) enabled++;
@@ -161,13 +143,13 @@ public class CategoryPanel {
             int emx = bodyMouse ? mx : Widget.NO_MOUSE, emy = bodyMouse ? my : Widget.NO_MOUSE;
             int cy = top + 3 - Math.round(scroll);
             boolean scrollable = contentH > maxBody;
-            int ew = WIDTH - 4 - (scrollable ? 3 : 0);
+            int ew = WIDTH - 6 - (scrollable ? 4 : 0);
             if (shown.isEmpty()) {
                 Paint.textCentered(ctx, Lang.ui("nothing-found", "Ничего не найдено"), x + WIDTH / 2, top + 6, Palette.TEXT_MUTED);
             }
             for (ModuleEntry e : shown) {
                 int h = e.height();
-                if (cy + h >= top && cy <= bottom) cy += e.render(ctx, x + 2, cy, ew, emx, emy, tip, top, bottom);
+                if (cy + h >= top && cy <= bottom) cy += e.render(ctx, x + 3, cy, ew, emx, emy, tip, top, bottom);
                 else {
                     e.render(ctx, x + 2, -10000, ew, Widget.NO_MOUSE, Widget.NO_MOUSE, tip, top, bottom); // keep animations running
                     cy += h;
@@ -179,8 +161,8 @@ public class CategoryPanel {
                 int trackH = bottom - top - 6;
                 int thumbH = Math.max(12, Math.round(trackH * (maxBody / (float) contentH)));
                 int thumbY = top + 3 + Math.round((trackH - thumbH) * (scroll / Math.max(1, maxScroll)));
-                Paint.round(ctx, x + WIDTH - 4, top + 3, 2, trackH, 1, 0x40000000);
-                Paint.round(ctx, x + WIDTH - 4, thumbY, 2, thumbH, 1, Palette.accentA(190));
+                Paint.rect(ctx, x + WIDTH - 5, top + 3, 2, trackH, 0x30FFFFFF);
+                Paint.rect(ctx, x + WIDTH - 5, thumbY, 2, thumbH, 0xC0D0D0D0);
             }
         }
     }

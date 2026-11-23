@@ -50,7 +50,7 @@ public final class Tooltip {
         if (hoverTime < DELAY) return;
         fade = Anim.approach(fade, 1, 14);
 
-        List<OrderedText> lines = Paint.font().wrapLines(StringVisitable.plain(text), MAX_WIDTH);
+        List<OrderedText> lines = Paint.wrap(text, MAX_WIDTH);
         int w = 0;
         for (OrderedText l : lines) w = Math.max(w, Paint.font().getWidth(l));
         if (title != null) w = Math.max(w, Paint.width(title));
@@ -70,19 +70,15 @@ public final class Tooltip {
         m.pushMatrix();
         m.translate(0, (1 - fade) * 3);
 
-        Paint.glow(ctx, x, y, bw, bh, 4, Palette.SHADOW, 4);
-        Paint.roundGradient(ctx, x, y, bw, bh, 4, 0xF21C1C1C, 0xF20E0E0E);
-        Paint.outline(ctx, x, y, bw, bh, 4, Palette.OUTLINE);
-        Paint.rect(ctx, x + 1, y + 4, 2, bh - 8, Palette.accent());
+        Paint.tooltipBox(ctx, x, y, bw, bh);
 
         int ty = y + 5;
         if (title != null) {
-            Paint.text(ctx, title, x + 7, ty, Palette.accent());
+            Paint.text(ctx, title, x + 6, ty, Anim.mix(0xFFFFFFFF, Palette.accent(), 0.5f));
             ty += 13;
         }
         for (OrderedText l : lines) {
-            int c = Paint.a(0xFFE6E6E6);
-            if ((c >>> 24) >= 4) ctx.drawTextWithShadow(Paint.font(), l, x + 7, ty, c);
+            Paint.line(ctx, l, x + 7, ty, 0xFFE6E6E6);
             ty += lineH;
         }
 

@@ -46,10 +46,9 @@ public final class Toasts {
             int yy = y - h + Math.round((1 - in) * 8);
             float old = Paint.alpha;
             Paint.alpha = old * f;
-            Paint.glow(ctx, x, yy, w, h, 4, Palette.SHADOW, 4);
-            Paint.roundGradient(ctx, x, yy, w, h, 4, 0xF21E1E1E, 0xF2121212);
+            Paint.panel(ctx, x, yy, w, h, Paint.PANEL_BG_SOLID);
             int accent = t.error ? 0xFFE5484D : Palette.accent();
-            Paint.outline(ctx, x, yy, w, h, 4, Anim.withAlpha(accent, 150));
+            Paint.rect(ctx, x + 2, yy + h - 2, w - 4, 1, Anim.withAlpha(accent, 170));
             Paint.circle(ctx, x + 8, yy + h / 2, 2, accent);
             Paint.text(ctx, t.text, x + 14, yy + 4, Palette.TEXT);
             Paint.alpha = old;

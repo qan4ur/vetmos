@@ -38,8 +38,7 @@ public class EnumWidget extends SettingWidget<EnumSetting<?>> {
         int boxW = vw + 16, boxX = right() - boxW, boxY = y + 1, boxH = ROW - 2;
 
         Paint.text(ctx, Paint.trim(title(), boxX - x - 4), x, y + 3, textColor(hover));
-        Paint.round(ctx, boxX, boxY, boxW, boxH, 3, Anim.mix(Palette.CONTROL, Palette.CONTROL_HOVER, hover * 0.6f + flash * 0.4f));
-        Paint.outline(ctx, boxX, boxY, boxW, boxH, 3, Anim.mix(Palette.CONTROL_LINE, Palette.accent(), hover * 0.5f + flash * 0.5f));
+        Paint.button(ctx, boxX, boxY, boxW, boxH, Paint.styled(""), hover, flash * 0.6f, true);
         int arrow = Anim.mix(Palette.TEXT_FAINT, Palette.accent(), hover);
         Paint.text(ctx, "‹", boxX + 3, y + 3, arrow);
         Paint.text(ctx, "›", boxX + boxW - 3 - Paint.width("›"), y + 3, arrow);

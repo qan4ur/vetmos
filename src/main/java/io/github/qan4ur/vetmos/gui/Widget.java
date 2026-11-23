@@ -47,7 +47,7 @@ public abstract class Widget {
 
     /** Subtle highlight behind a hovered row. */
     protected void drawHoverBg(DrawContext ctx, int h) {
-        if (hover > 0.01f) Paint.round(ctx, x - 2, y, w + 4, h, 2, Anim.withAlpha(0xFFFFFFFF, Math.round(14 * hover)));
+        if (hover > 0.01f) Paint.rect(ctx, x - 2, y, w + 4, h, Anim.withAlpha(0xFFFFFFFF, Math.round(12 * hover)));
     }
 
     protected static int textColor(float hover) {

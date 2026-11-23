@@ -63,33 +63,27 @@ public class ModuleEntry {
         on = Anim.approach(on, module.isEnabled() ? 1 : 0, 12);
         focusPulse = Anim.approach(focusPulse, 0, 1.2f);
 
-        if (on > 0.01f) {
-            Paint.gradientH(ctx, x, y, w, ROW_H, Palette.accentA(Math.round(62 * on)), Palette.accentA(Math.round(16 * on)));
-            Paint.rect(ctx, x, y, w, 1, Palette.accentA(Math.round(36 * on)));
-        }
-        if (hover > 0.01f) Paint.rect(ctx, x, y, w, ROW_H, Anim.withAlpha(0xFFFFFFFF, Math.round(16 * hover)));
+        // inventory-slot-like cell (1px gap between rows); enabled = accent-tinted cell + 2px accent line on the left
+        Paint.slot(ctx, x, y, w, ROW_H - 1, hover, on * 0.55f);
         if (focusPulse > 0.01f) {
             float p = focusPulse * (0.6f + 0.4f * (float) Math.sin(System.currentTimeMillis() / 90.0));
-            Paint.outline(ctx, x, y, w, ROW_H, 0, Palette.accentA(Math.round(255 * p)));
+            Paint.outline(ctx, x, y, w, ROW_H - 1, 1, Anim.withAlpha(0xFFFFFFFF, Math.round(220 * p)));
         }
-
-        // accent bar (gradient-aware: the colour depends on the row position on screen)
-        int barH = Math.round((ROW_H - 4) * Anim.easeOutCubic(on));
+        int barH = Math.round((ROW_H - 3) * Anim.easeOutCubic(on));
         if (barH > 0) {
-            int by = y + (ROW_H - barH) / 2;
+            int by = y + (ROW_H - 1 - barH) / 2;
             int c = Theme.accentAt(Math.floorMod(y + x, 400) / 400f) | 0xFF000000;
-            Paint.glow(ctx, x, by, 2, barH, 1, Anim.alpha(Anim.withAlpha(c, 100), on), 2);
-            Paint.rect(ctx, x, by, 2, barH, c);
+            Paint.rect(ctx, x + 1, by, 2, barH, c);
         }
 
         int titleColor = Anim.mix(Anim.mix(0xFFB4B4B4, 0xFFECECEC, hover), Palette.TEXT, on);
         int tx = x + PAD_X + Math.round(on * 2);
-        Paint.text(ctx, Paint.trim(module.displayTitle(), w - PAD_X - GEAR_W - 4), tx, y + 4, titleColor);
+        Paint.text(ctx, Paint.trim(module.displayTitle(), w - PAD_X - GEAR_W - 4), tx, y + 3, titleColor);
 
         // gear button: faint until the row is hovered, turns a little when hovered itself
         var m = ctx.getMatrices();
         m.pushMatrix();
-        m.translate(x + w - GEAR_W / 2f - 1, y + ROW_H / 2f);
+        m.translate(x + w - GEAR_W / 2f - 1, y + (ROW_H - 1) / 2f);
         m.rotate((float) (gearHover * Math.PI / 3));
         int gc = Anim.mix(Anim.mix(0x605E5E5E, 0xFFBDBDBD, hover), Palette.accent(), gearHover);
         Paint.text(ctx, "⚙", -Paint.width("⚙") / 2, -4, gc);

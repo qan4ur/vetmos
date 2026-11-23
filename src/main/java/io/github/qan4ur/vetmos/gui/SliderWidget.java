@@ -81,17 +81,8 @@ public class SliderWidget extends SettingWidget<Setting<?>> {
         Paint.text(ctx, Paint.trim(title(), right() - x - vw - 6), x, y + 3, textColor(hover));
         Paint.textRight(ctx, value, right(), y + 3, Anim.mix(Palette.TEXT_SECONDARY, Palette.TEXT, knob));
 
-        int tx = trackX(), tw = trackW(), ty = y + 15;
-        Paint.round(ctx, tx, ty, tw, 3, 1, Palette.TRACK);
-        int fw = Math.round(tw * shown);
-        if (fw > 0) {
-            Paint.gradientH(ctx, tx, ty, fw, 3, Anim.mix(io.github.qan4ur.vetmos.util.Theme.accentAt(0) | 0xFF000000, 0xFF000000, 0.35f), io.github.qan4ur.vetmos.util.Theme.accentAt(shown) | 0xFF000000);
-        }
-        int kx = tx + fw;
-        int kr = 3 + Math.round(knob);
-        if (knob > 0.02f) Paint.glow(ctx, kx - kr, ty + 1 - kr, kr * 2, kr * 2, kr, Anim.alpha(Palette.glow(), knob), 3);
-        Paint.circle(ctx, kx, ty + 1, kr, Anim.mix(0xFFD8D8D8, 0xFFFFFFFF, knob));
-        Paint.circle(ctx, kx, ty + 1, Math.max(1, kr - 2), Anim.mix(0xFF1A1A1A, Palette.accentDim(), knob));
+        int tx = trackX(), tw = trackW(), ty = y + 13;
+        Paint.slider(ctx, tx, ty, tw, 7, shown, knob);
 
         finish(ctx, mx, my, tip);
     }

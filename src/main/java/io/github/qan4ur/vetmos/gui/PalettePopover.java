@@ -54,10 +54,12 @@ public class PalettePopover extends Popover {
             swHover[i] = Anim.approach(swHover[i], hov ? 1 : 0, 18);
             boolean sel = (accent & 0xFFFFFF) == (Theme.PRESETS[i] & 0xFFFFFF);
             int grow = Math.round(swHover[i]);
-            if (sel || swHover[i] > 0.02f) Paint.glow(ctx, sx - grow, sy - grow, SW + grow * 2, SW + grow * 2, 4, Anim.withAlpha(Theme.PRESETS[i], sel ? 110 : Math.round(80 * swHover[i])), 3);
-            Paint.round(ctx, sx - grow, sy - grow, SW + grow * 2, SW + grow * 2, 4, Theme.PRESETS[i]);
+            Paint.round(ctx, sx - grow, sy - grow, SW + grow * 2, SW + grow * 2, 1, Theme.PRESETS[i]);
+            Paint.outline(ctx, sx - grow, sy - grow, SW + grow * 2, SW + grow * 2, 1, 0x40FFFFFF);
             if (sel) {
-                Paint.outline(ctx, sx - 2, sy - 2, SW + 4, SW + 4, 5, 0xFFFFFFFF);
+                // hotbar-like 2px light square around the selected swatch
+                Paint.outline(ctx, sx - 3, sy - 3, SW + 6, SW + 6, 0, 0xFFE6E6E6);
+                Paint.outline(ctx, sx - 2, sy - 2, SW + 4, SW + 4, 0, 0xFFE6E6E6);
                 int dot = Palette.luminance(Theme.PRESETS[i]) > 0.6f ? 0xFF101010 : 0xFFFFFFFF;
                 Paint.circle(ctx, sx + SW / 2, sy + SW / 2, 2, dot);
             }
@@ -73,9 +75,7 @@ public class PalettePopover extends Popover {
             boolean hov = Paint.inside(mx, my, bx, ly, 22, 14);
             langHover[i] = Anim.approach(langHover[i], hov ? 1 : 0, 18);
             boolean sel = (i == 1) == en;
-            Paint.round(ctx, bx, ly, 22, 14, 3, sel ? Palette.accentA(70) : Anim.mix(Palette.CONTROL, Palette.CONTROL_HOVER, langHover[i]));
-            Paint.outline(ctx, bx, ly, 22, 14, 3, sel ? Palette.accent() : Anim.mix(Palette.CONTROL_LINE, Palette.CONTROL_LINE_HOVER, langHover[i]));
-            Paint.textCentered(ctx, i == 0 ? "RU" : "EN", bx + 11, ly + 3, sel ? Palette.TEXT : Palette.TEXT_MUTED);
+            Paint.button(ctx, bx, ly, 22, 14, Paint.styled(i == 0 ? "RU" : "EN"), Math.max(langHover[i], sel ? 1 : 0), 0, true);
             if (hov) tip.offer("lang" + i, i == 0 ? "Русский" : "English");
         }
 

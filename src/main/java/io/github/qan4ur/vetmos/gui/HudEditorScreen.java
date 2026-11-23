@@ -144,8 +144,7 @@ public class HudEditorScreen extends Screen {
             int x = (int) Math.round(b[0] + b[2] / 2 - w / 2.0), y = (int) Math.round(b[1] + b[3] / 2 - 6);
             float old = Paint.alpha;
             Paint.alpha = old * Anim.clamp01(scaleFade * 2);
-            Paint.round(ctx, x, y, w, 12, 3, 0xE0141414);
-            Paint.outline(ctx, x, y, w, 12, 3, Palette.accent());
+            Paint.tooltipBox(ctx, x, y, w, 12);
             Paint.textCentered(ctx, s, x + w / 2, y + 2, Palette.TEXT);
             Paint.alpha = old;
         }
@@ -172,7 +171,6 @@ public class HudEditorScreen extends Screen {
         float f = Math.max(hover, drag);
 
         Paint.rect(ctx, x, y, w, h, Palette.accentA(Math.round(14 + 26 * f)));
-        if (f > 0.02f) Paint.glow(ctx, x, y, w, h, 0, Anim.alpha(Palette.glow(), f), 3);
         Paint.outline(ctx, x, y, w, h, 0, Anim.mix(Palette.accentA(150), Palette.accentBright(), f));
         // corner ticks
         int c = Anim.mix(Palette.accent(), 0xFFFFFFFF, f * 0.7f);
@@ -193,7 +191,8 @@ public class HudEditorScreen extends Screen {
         int lx = Math.max(1, Math.min(width - lw - 1, x));
         int ly = y - lh - 1;
         if (ly < 1) ly = y + h + 1;
-        Paint.round(ctx, lx, ly, lw, lh, 2, Anim.mix(0xC0202020, Anim.mix(0xF0303030, Palette.accentDim(), 0.6f), f));
+        Paint.rect(ctx, lx, ly, lw, lh, Anim.mix(0xB0101012, 0xD0303034, f));
+        Paint.rect(ctx, lx, ly + lh - 1, lw, 1, Anim.mix(0xFF9A9A9A, Palette.accent(), f));
         Paint.textScaled(ctx, label, lx + 3, ly + 2, sc, Palette.TEXT);
     }
 
@@ -202,10 +201,7 @@ public class HudEditorScreen extends Screen {
         String sub = Lang.ui("hud-hint-shift", "Shift — без привязки к краям");
         int w = Paint.width(hint) + 16;
         int x = (width - w) / 2, y = 5;
-        Paint.glow(ctx, x, y, w, 24, 5, Palette.SHADOW, 4);
-        Paint.roundGradient(ctx, x, y, w, 24, 5, 0xE8181818, 0xE80C0C0C);
-        Paint.outline(ctx, x, y, w, 24, 5, Palette.OUTLINE);
-        Paint.rect(ctx, x + 5, y + 23, w - 10, 1, Palette.accentA(140));
+        Paint.panel(ctx, x, y, w, 24, Paint.HUD_EDITOR_BG);
         Paint.textCentered(ctx, hint, width / 2, y + 4, Palette.TEXT);
         float sc = 0.75f;
         Paint.textScaled(ctx, sub, width / 2f - Paint.width(sub) * sc / 2, y + 14, sc, Palette.TEXT_MUTED);
@@ -232,13 +228,10 @@ public class HudEditorScreen extends Screen {
         boolean hh = Paint.inside(mx, my, x, y, SIDE_W, SIDE_HEADER);
         sideHeaderHover = Anim.approach(sideHeaderHover, hh || sideDragging ? 1 : 0, 16);
 
-        Paint.glow(ctx, x, y, SIDE_W, total, 5, Palette.SHADOW, 5);
-        if (bodyH > 0) Paint.roundGradient(ctx, x, y + SIDE_HEADER - 5, SIDE_W, bodyH + 5, 5, Palette.PANEL_TOP, Palette.PANEL_BOTTOM, false, true);
-        Paint.roundGradient(ctx, x, y, SIDE_W, SIDE_HEADER, 5, Anim.mix(Palette.HEADER_TOP, Palette.HEADER_TOP_HOVER, sideHeaderHover),
-            Anim.mix(Palette.HEADER_BOTTOM, Palette.HEADER_BOTTOM_HOVER, sideHeaderHover), true, bodyH <= 0);
-        if (bodyH > 0) Paint.rect(ctx, x, y + SIDE_HEADER - 1, SIDE_W, 1, Palette.accentA(200));
-        Paint.outline(ctx, x, y, SIDE_W, total, 5, Palette.OUTLINE);
-        Paint.textCentered(ctx, Lang.ui("hud-elements", "Элементы HUD"), x + SIDE_W / 2, y + 5, Palette.TEXT);
+        Paint.panel(ctx, x, y, SIDE_W, total, Paint.HUD_EDITOR_BG);
+        if (sideHeaderHover > 0.01f) Paint.rect(ctx, x + 2, y + 2, SIDE_W - 4, SIDE_HEADER - 3, Anim.withAlpha(0xFFFFFFFF, Math.round(10 * sideHeaderHover)));
+        if (bodyH > 0) Paint.rect(ctx, x + 4, y + SIDE_HEADER - 1, SIDE_W - 8, 1, 0x30FFFFFF);
+        Paint.text(ctx, Lang.ui("hud-elements", "Элементы HUD"), x + 6, y + 5, Anim.mix(0xFF8A8A8A, 0xFFBDBDBD, sideHeaderHover));
         if (hh) tooltip.offer("side-header", Lang.ui("hud-elements", "Элементы HUD"), Lang.ui("hud-elements-desc", "Нажмите на элемент, чтобы включить или выключить его. ЛКМ по заголовку — перетащить, ПКМ — свернуть."));
 
         if (bodyH <= 0) return;
@@ -249,10 +242,9 @@ public class HudEditorScreen extends Screen {
             boolean hov = Paint.inside(mx, my, x + 2, ry, SIDE_W - 4, SIDE_ROW) && my < y + total;
             an[0] = Anim.approach(an[0], hov ? 1 : 0, 18);
             an[1] = Anim.approach(an[1], m.isEnabled() ? 1 : 0, 14);
-            if (an[1] > 0.01f) Paint.gradientH(ctx, x + 2, ry, SIDE_W - 4, SIDE_ROW, Palette.accentA(Math.round(60 * an[1])), Palette.accentA(Math.round(14 * an[1])));
-            if (an[0] > 0.01f) Paint.rect(ctx, x + 2, ry, SIDE_W - 4, SIDE_ROW, Anim.withAlpha(0xFFFFFFFF, Math.round(18 * an[0])));
-            int dotC = Anim.mix(0xFF3A3A3A, Palette.accent(), an[1]);
-            Paint.circle(ctx, x + 9, ry + SIDE_ROW / 2, 2, dotC);
+            Paint.slot(ctx, x + 3, ry, SIDE_W - 6, SIDE_ROW - 1, an[0], an[1] * 0.55f);
+            int barH = Math.round((SIDE_ROW - 3) * an[1]);
+            if (barH > 0) Paint.rect(ctx, x + 4, ry + (SIDE_ROW - 1 - barH) / 2, 2, barH, io.github.qan4ur.vetmos.util.Theme.accentAt(ry % 300 / 300f) | 0xFF000000);
             Paint.text(ctx, Paint.trim(m.displayTitle(), SIDE_W - 22), x + 15, ry + 3, Anim.mix(Palette.TEXT_MUTED, Palette.TEXT, Math.max(an[1], an[0] * 0.6f)));
             if (hov) tooltip.offer("side:" + m.name, m.displayTitle(), m.displayDescription() + " " + Lang.ui("hud-side-row", "(ЛКМ — вкл/выкл, ПКМ — настройки)"));
             ry += SIDE_ROW;

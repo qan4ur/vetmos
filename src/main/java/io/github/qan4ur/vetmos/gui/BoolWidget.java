@@ -25,15 +25,11 @@ public class BoolWidget extends SettingWidget<BoolSetting> {
         t = Anim.approach(t, setting.get() ? 1 : 0, 16);
         float e = Anim.easeInOutCubic(t);
 
-        int tw = 16, th = 8;
+        int tw = 18, th = 9;
         int tx = right() - tw, ty = y + (ROW - th) / 2;
         Paint.text(ctx, Paint.trim(title(), tx - x - 4), x, y + 3, textColor(hover));
 
-        if (e > 0.02f) Paint.glow(ctx, tx, ty, tw, th, 4, Anim.alpha(Palette.glow(), e), 3);
-        Paint.round(ctx, tx, ty, tw, th, 4, Anim.mix(Palette.TRACK, Palette.accent(), e));
-        Paint.outline(ctx, tx, ty, tw, th, 4, Anim.mix(Palette.CONTROL_LINE, Anim.mix(Palette.CONTROL_LINE_HOVER, Palette.accentBright(), e), e * 0.6f + hover * 0.4f));
-        int kx = Math.round(tx + 1 + e * (tw - th));
-        Paint.round(ctx, kx, ty + 1, th - 2, th - 2, 3, Anim.mix(0xFF9A9A9A, Palette.onAccent(), e));
+        Paint.toggle(ctx, tx, ty, tw, th, e, hover);
 
         finish(ctx, mx, my, tip);
     }

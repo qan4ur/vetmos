@@ -73,7 +73,6 @@ public class ColorWidget extends SettingWidget<ColorSetting> {
         int color = setting.get();
         int sw = 18, sh = 8, sx = right() - sw, sy = y + (ROW - sh) / 2;
         Paint.text(ctx, Paint.trim(title(), sx - x - 4), x, y + 3, textColor(hover));
-        if (hover > 0.02f || open.raw() > 0) Paint.glow(ctx, sx, sy, sw, sh, 2, Anim.alpha(color | 0xFF000000, 0.35f * Math.max(hover, open.eased())), 3);
         Paint.checker(ctx, sx, sy, sw, sh, 2);
         Paint.rect(ctx, sx, sy, sw, sh, color);
         Paint.outline(ctx, sx - 1, sy - 1, sw + 2, sh + 2, 0, Anim.mix(Palette.CONTROL_LINE, 0xFFFFFFFF, hover * 0.5f + open.eased() * 0.5f));

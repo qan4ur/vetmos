@@ -49,7 +49,7 @@ public class MacroEditor extends Widget {
             + "• " + Lang.ui("macro-empty-vetmos", ".toggle zoom — команда Vetmos");
         List<String> out = new ArrayList<>();
         for (String part : text.split("\n")) {
-            for (OrderedText l : Paint.font().wrapLines(StringVisitable.plain(part), Math.round((w - 16) / SMALL))) {
+            for (OrderedText l : Paint.wrap(part, Math.round((w - 16) / SMALL))) {
                 StringBuilder sb = new StringBuilder();
                 l.accept((index, style, cp) -> {
                     sb.appendCodePoint(cp);
@@ -105,8 +105,7 @@ public class MacroEditor extends Widget {
         }
         if (list.isEmpty()) {
             int eh = emptyHeight();
-            Paint.round(ctx, x, cy, w, eh, 4, 0x60000000);
-            Paint.outline(ctx, x, cy, w, eh, 4, 0x20FFFFFF);
+            Paint.slot(ctx, x, cy, w, eh, 0, 0);
             int ly = cy + 5;
             for (String l : emptyLines()) {
                 Paint.textScaled(ctx, l, x + 8, ly, SMALL, l.startsWith("•") ? Palette.TEXT_SECONDARY : Palette.TEXT_MUTED);
@@ -271,8 +270,8 @@ public class MacroEditor extends Widget {
             if (!text.isFocused() && !text.text().equals(m.text)) text.setText(m.text);
             if (!name.isFocused() && !name.text().equals(m.name)) name.setText(m.name);
 
-            Paint.round(ctx, x, y, w, h, 4, m.enabled ? 0xFF161616 : 0xFF101010);
-            Paint.outline(ctx, x, y, w, h, 4, m.enabled ? Palette.accentA(70) : 0x24FFFFFF);
+            Paint.slot(ctx, x, y, w, h, 0, m.enabled ? 0.25f : 0);
+            if (m.enabled) Paint.rect(ctx, x + 1, y + 2, 2, h - 4, Theme.accentAt((y % 300) / 300f) | 0xFF000000);
 
             // row 1: switch, name, key, test, delete
             int r1 = y + 5;
@@ -281,9 +280,7 @@ public class MacroEditor extends Widget {
             swT = Anim.approach(swT, m.enabled ? 1 : 0, 16);
             float se = Anim.easeInOutCubic(swT);
             int sx = x + 6, sy = r1 + 3;
-            Paint.round(ctx, sx, sy, 16, 8, 4, Anim.mix(Palette.TRACK, Palette.accent(), se));
-            Paint.outline(ctx, sx, sy, 16, 8, 4, Anim.mix(Palette.CONTROL_LINE, Palette.accentBright(), Math.max(se * 0.6f, swHover * 0.5f)));
-            Paint.round(ctx, Math.round(sx + 1 + se * 8), sy + 1, 6, 6, 3, Anim.mix(0xFF9A9A9A, Palette.onAccent(), se));
+            Paint.toggle(ctx, sx, sy, 16, 8, se, swHover);
             if (swHov) tip.offer(this, m.enabled ? Lang.ui("macro-on", "Макрос включён — нажмите, чтобы выключить.") : Lang.ui("macro-off", "Макрос выключен — нажмите, чтобы включить."));
 
             int delX = x + w - 16;
@@ -301,9 +298,8 @@ public class MacroEditor extends Widget {
                 boolean yh = Paint.inside(mx, my, yx, r1, 28, 14), nh = Paint.inside(mx, my, yx + 30, r1, 28, 14);
                 yesHover = Anim.approach(yesHover, yh ? 1 : 0, 18);
                 noHover = Anim.approach(noHover, nh ? 1 : 0, 18);
-                Paint.round(ctx, yx, r1, 28, 14, 3, Anim.withAlpha(Theme.WARNING, Math.round(40 + 80 * yesHover)));
-                Paint.outline(ctx, yx, r1, 28, 14, 3, Theme.WARNING);
-                Paint.textCentered(ctx, Lang.ui("yes", "Да"), yx + 14, r1 + 3, Palette.TEXT);
+                Paint.button(ctx, yx, r1, 28, 14, Paint.styled(Lang.ui("yes", "Да")), yesHover, 0, true);
+                Paint.rect(ctx, yx, r1 + 12, 28, 2, Theme.WARNING);
                 ButtonWidget.draw(ctx, yx + 30, r1, 28, 14, Lang.ui("no", "Нет"), noHover, 0);
             } else {
                 name.x = nameX;
@@ -346,10 +342,7 @@ public class MacroEditor extends Widget {
             boolean sh = Paint.inside(mx, my, trackX - 2, r3, trackW + 4, 10);
             cdHover = Anim.approach(cdHover, sh || cdDrag ? 1 : 0, 18);
             float t = (float) Math.min(1, m.cooldown / 60.0);
-            Paint.round(ctx, trackX, r3 + 4, trackW, 3, 1, Palette.TRACK);
-            int fw = Math.round(trackW * t);
-            if (fw > 0) Paint.gradientH(ctx, trackX, r3 + 4, fw, 3, Anim.mix(Theme.accentAt(0) | 0xFF000000, 0xFF000000, 0.35f), Theme.accentAt(t) | 0xFF000000);
-            Paint.circle(ctx, trackX + fw, r3 + 5, 3 + Math.round(cdHover), Anim.mix(0xFFD8D8D8, 0xFFFFFFFF, cdHover));
+            Paint.slider(ctx, trackX, r3 + 1, trackW, 7, t, cdHover);
             int vx = x + w - 6 - vw;
             if (cdEditing) {
                 cdField.x = vx;
@@ -366,7 +359,7 @@ public class MacroEditor extends Widget {
             // live cooldown bar
             double left = m.cooldownLeft();
             if (left > 0 && m.cooldown > 0) {
-                Paint.rect(ctx, x + 6, y + 55, w - 12, 2, 0x30FFFFFF);
+                Paint.rect(ctx, x + 6, y + 55, w - 12, 2, 0x26FFFFFF);
                 Paint.rect(ctx, x + 6, y + 55, (int) Math.round((w - 12) * (left / m.cooldown)), 2, Palette.accent());
             }
 

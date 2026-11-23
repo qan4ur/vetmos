@@ -42,9 +42,7 @@ public class SearchField implements TextInput {
         hover = Anim.approach(hover, hov ? 1 : 0, 16);
         focusAnim = Anim.approach(focusAnim, focused ? 1 : 0, 14);
 
-        if (focusAnim > 0.02f) Paint.glow(ctx, x, y, w, h, 4, Anim.alpha(Palette.glow(), focusAnim * 0.7f), 3);
-        Paint.round(ctx, x, y, w, h, 4, Anim.mix(0xE0121212, 0xF01C1C1C, Math.max(hover * 0.5f, focusAnim)));
-        Paint.outline(ctx, x, y, w, h, 4, Anim.mix(Anim.mix(Palette.CONTROL_LINE, Palette.CONTROL_LINE_HOVER, hover), Palette.accent(), focusAnim));
+        Paint.field(ctx, x, y, w, h, hover, focusAnim);
 
         int ty = y + (h - 8) / 2;
         if (icon) Paint.text(ctx, "⌕", x + 5, ty, Anim.mix(Palette.TEXT_FAINT, Palette.accent(), focusAnim));

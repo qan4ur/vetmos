@@ -33,12 +33,7 @@ public class ButtonWidget extends Widget {
 
     /** Shared look, also used by the top bar buttons. */
     public static void draw(DrawContext ctx, int bx, int by, int bw, int bh, String label, float hover, float flash) {
-        float f = Math.max(hover * 0.7f, flash);
-        if (f > 0.02f) Paint.glow(ctx, bx, by, bw, bh, 3, Anim.alpha(Palette.glow(), f * 0.6f), 3);
-        Paint.roundGradient(ctx, bx, by, bw, bh, 3, Anim.mix(0xFF202020, Anim.mix(0xFF2A2A2A, Palette.accent(), 0.35f), f), Anim.mix(0xFF141414, Anim.mix(0xFF1A1A1A, Palette.accent(), 0.2f), f));
-        Paint.outline(ctx, bx, by, bw, bh, 3, Anim.mix(Palette.CONTROL_LINE, Palette.accent(), f));
-        String l = Paint.trim(label, bw - 6);
-        Paint.textCentered(ctx, l, bx + bw / 2, by + (bh - 8) / 2 + 1, Anim.mix(Palette.TEXT_IDLE, Palette.TEXT, hover));
+        Paint.button(ctx, bx, by, bw, bh, Paint.styled(label), hover, flash, true);
     }
 
     @Override

@@ -90,11 +90,7 @@ public class WelcomeOverlay {
         m.scale(s, s);
         m.translate(-(x + w / 2f), -(y + h / 2f));
 
-        Paint.glow(ctx, x, y, w, h, 8, 0xE0000000, 10);
-        Paint.glow(ctx, x, y, w, h, 8, Palette.accentA(50), 4);
-        Paint.roundGradient(ctx, x, y, w, h, 8, 0xFC1A1A1A, 0xFC0C0C0C);
-        Paint.outline(ctx, x, y, w, h, 8, Palette.OUTLINE);
-        SettingsWindow.accentLine(ctx, x, y, w);
+        Paint.panel(ctx, x, y, w, h, Paint.MODAL_BG);
 
         // language switch
         boolean en = Lang.isEnglish();
@@ -103,9 +99,7 @@ public class WelcomeOverlay {
             boolean hov = Paint.inside(mx, my, b[0], b[1], b[2], b[3]);
             hovers[3 + i] = Anim.approach(hovers[3 + i], hov ? 1 : 0, 18);
             boolean sel = (i == 1) == en;
-            Paint.round(ctx, b[0], b[1], b[2], b[3], 3, sel ? Palette.accentA(70) : Anim.mix(Palette.CONTROL, Palette.CONTROL_HOVER, hovers[3 + i]));
-            Paint.outline(ctx, b[0], b[1], b[2], b[3], 3, sel ? Palette.accent() : Palette.CONTROL_LINE);
-            Paint.textCentered(ctx, i == 0 ? "RU" : "EN", b[0] + 11, b[1] + 3, sel ? Palette.TEXT : Palette.TEXT_MUTED);
+            Paint.button(ctx, b[0], b[1], b[2], b[3], Paint.styled(i == 0 ? "RU" : "EN"), Math.max(hovers[3 + i], sel ? 1 : 0), 0, true);
         }
 
         // step content (slides in)
@@ -116,9 +110,7 @@ public class WelcomeOverlay {
         m.pushMatrix();
         m.translate((1 - a) * 12, 0);
         int cx = x + 26, cy = y + 30;
-        Paint.glow(ctx, cx - 11, cy - 11, 22, 22, 11, Palette.accentA(70), 4);
-        Paint.circle(ctx, cx, cy, 11, Anim.withAlpha(Palette.accent(), 50));
-        Paint.outline(ctx, cx - 11, cy - 11, 22, 22, 11, Palette.accent());
+        Paint.slot(ctx, cx - 11, cy - 11, 22, 22, 0, 0.6f);
         Paint.textCentered(ctx, st.icon(), cx, cy - 4, Palette.TEXT);
         String title = st.title().get();
         int tx = x + 44;
@@ -126,13 +118,12 @@ public class WelcomeOverlay {
             String ch = String.valueOf(title.charAt(i));
             int c = Theme.accentAt((float) i / Math.max(1, title.length()));
             Paint.text(ctx, Text.literal(ch).formatted(Formatting.BOLD), tx, cy - 4, Anim.mix(Palette.TEXT, c | 0xFF000000, 0.5f));
-            tx += Paint.font().getWidth(Text.literal(ch).formatted(Formatting.BOLD));
+            tx += Paint.width(Text.literal(ch).formatted(Formatting.BOLD));
         }
-        List<OrderedText> lines = Paint.font().wrapLines(StringVisitable.plain(st.body().get()), w - 28);
+        List<OrderedText> lines = Paint.wrap(st.body().get(), w - 28);
         int ly = y + 52;
         for (OrderedText l : lines) {
-            int c = Paint.a(0xFFDADADA);
-            if ((c >>> 24) >= 4) ctx.drawTextWithShadow(Paint.font(), l, x + 14, ly, c);
+            Paint.line(ctx, l, x + 14, ly, 0xFFDADADA);
             ly += 11;
         }
         m.popMatrix();
@@ -142,8 +133,8 @@ public class WelcomeOverlay {
         int dotsW = STEPS.size() * 10;
         for (int i = 0; i < STEPS.size(); i++) {
             int dx = x + (w - dotsW) / 2 + i * 10 + 5, dy = y + h - 32;
-            if (i == step) Paint.round(ctx, dx - 4, dy - 2, 8, 4, 2, Palette.accent());
-            else Paint.circle(ctx, dx, dy, 2, 0x50FFFFFF);
+            if (i == step) Paint.rect(ctx, dx - 4, dy - 1, 8, 2, Palette.accent());
+            else Paint.rect(ctx, dx - 2, dy - 1, 4, 2, 0x50FFFFFF);
         }
 
         // buttons

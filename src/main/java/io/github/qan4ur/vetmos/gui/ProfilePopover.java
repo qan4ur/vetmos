@@ -77,15 +77,14 @@ public class ProfilePopover extends Popover {
             hv[0] = Anim.approach(hv[0], hov ? 1 : 0, 18);
             hv[1] = Anim.approach(hv[1], xHov ? 1 : 0, 18);
             boolean cur = p.equalsIgnoreCase(current);
-            if (cur) Paint.round(ctx, x + 4, ry, w - 8, ROW, 3, Palette.accentA(40));
-            if (hv[0] > 0.01f) Paint.round(ctx, x + 4, ry, w - 8, ROW, 3, Anim.withAlpha(0xFFFFFFFF, Math.round(14 * hv[0])));
+            Paint.slot(ctx, x + 4, ry, w - 8, ROW - 1, hv[0], cur ? 0.5f : 0);
 
             if (p.equals(confirmDelete)) {
                 Paint.text(ctx, Paint.trim(Lang.ui("delete-confirm", "Удалить") + " «" + p + "»?", w - 70), x + 9, ry + 3, 0xFFE5484D);
                 drawSmall(ctx, x + w - 58, ry + 1, 26, Lang.ui("yes", "Да"), Paint.inside(mx, my, x + w - 58, ry + 1, 26, ROW - 2), true);
                 drawSmall(ctx, x + w - 30, ry + 1, 26, Lang.ui("no", "Нет"), Paint.inside(mx, my, x + w - 30, ry + 1, 26, ROW - 2), false);
             } else {
-                if (cur) Paint.circle(ctx, x + 10, ry + ROW / 2, 2, Palette.accent());
+                if (cur) Paint.rect(ctx, x + 5, ry + 2, 2, ROW - 5, Palette.accent());
                 Paint.text(ctx, Paint.trim(p, w - 40), x + 16, ry + 3, cur ? Palette.TEXT : Anim.mix(Palette.TEXT_MUTED, Palette.TEXT_IDLE, hv[0]));
                 if (!cur && hv[0] > 0.02f) {
                     Paint.text(ctx, "✕", x + w - 14, ry + 3, Anim.alpha(Anim.mix(Palette.TEXT_MUTED, 0xFFE5484D, hv[1]), hv[0]));
@@ -134,9 +133,8 @@ public class ProfilePopover extends Popover {
 
     private static void drawSmall(DrawContext ctx, int bx, int by, int bw, String label, boolean hov, boolean danger) {
         int c = danger ? 0xFFE5484D : Palette.CONTROL_LINE_HOVER;
-        Paint.round(ctx, bx, by, bw, ROW - 2, 3, hov ? Anim.withAlpha(c, 90) : Palette.CONTROL);
-        Paint.outline(ctx, bx, by, bw, ROW - 2, 3, Anim.withAlpha(c, hov ? 255 : 150));
-        Paint.textCentered(ctx, label, bx + bw / 2, by + 2, Palette.TEXT);
+        Paint.button(ctx, bx, by, bw, ROW - 2, Paint.styled(label), hov ? 1 : 0, 0, true);
+        if (danger) Paint.rect(ctx, bx, by + ROW - 4, bw, 2, c);
     }
 
     private void create() {

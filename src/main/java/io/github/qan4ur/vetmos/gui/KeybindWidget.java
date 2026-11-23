@@ -71,11 +71,10 @@ public class KeybindWidget extends Widget {
         if (!compact) Paint.text(ctx, Lang.ui("key", "Клавиша"), x, y + 3, textColor(hover));
         else drawHoverBg(ctx, 0);
         float pulse = isListening() ? 0.5f + 0.5f * (float) Math.sin(System.currentTimeMillis() / 140.0) : 0;
-        if (listen > 0.02f) Paint.glow(ctx, bx, by, boxW, bh, 3, Anim.alpha(Palette.glow(), listen * (0.5f + pulse * 0.5f)), 3);
-        Paint.round(ctx, bx, by, boxW, bh, 3, Anim.mix(Palette.CONTROL, Anim.mix(Palette.CONTROL_HOVER, Palette.accentDim(), 0.5f), Math.max(listen, flash)));
-        Paint.outline(ctx, bx, by, boxW, bh, 3, Anim.mix(Anim.mix(Palette.CONTROL_LINE, Palette.CONTROL_LINE_HOVER, hover), Palette.accent(), Math.max(listen * (0.6f + 0.4f * pulse), flash)));
+        Paint.button(ctx, bx, by, boxW, bh, Paint.styled(""), Math.max(hover, listen * (0.5f + 0.5f * pulse)), flash, true);
+        if (listen > 0.02f) Paint.rect(ctx, bx, by + bh - 2, boxW, 2, Anim.alpha(Palette.accent(), listen * (0.6f + 0.4f * pulse)));
         int textColor = getter.getAsInt() == Keys.NONE && !isListening() ? Palette.TEXT_MUTED : Palette.TEXT;
-        Paint.textCentered(ctx, keyName, bx + boxW / 2, y + 4, textColor);
+        Paint.textCentered(ctx, keyName, bx + boxW / 2, by + (bh - 10) / 2, textColor);
 
         if (hov) {
             tip.offer(this, Lang.ui("key-title", "Клавиша модуля"), isListening()

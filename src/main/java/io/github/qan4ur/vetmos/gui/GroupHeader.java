@@ -42,9 +42,9 @@ public class GroupHeader extends Widget {
         }
         float scale = 0.75f;
         String title = this.title.get().toUpperCase(Locale.ROOT);
-        Paint.textScaled(ctx, title, x, y + 4, scale, Anim.mix(Palette.TEXT_MUTED, Palette.accent(), 0.25f));
+        Paint.textScaled(ctx, title, x, y + 4, scale, Palette.TEXT_MUTED);
         int tw = Math.round(Paint.width(title) * scale);
         int lx = x + tw + 4;
-        if (lx < x + w) Paint.gradientH(ctx, lx, y + 7, x + w - lx, 1, 0x40FFFFFF, 0x00FFFFFF);
+        if (lx < x + w) Paint.rect(ctx, lx, y + 7, x + w - lx, 1, 0x26FFFFFF);
     }
 }

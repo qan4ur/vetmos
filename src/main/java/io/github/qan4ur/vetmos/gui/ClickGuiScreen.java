@@ -289,6 +289,11 @@ public class ClickGuiScreen extends Screen {
         renderTopBar(ctx, baseX, baseY);
         renderHint(ctx);
 
+        // modal dim layer over the ClickGUI behind the settings window
+        if (window != null) {
+            float d = window.openAmount();
+            if (d > 0.01f) Paint.rect(ctx, -2000, -2000, vw + 4000, vh + 4000, Anim.withAlpha(0xFF000000, Math.round(0x99 * d)));
+        }
         if (window != null) window.render(ctx, overWindow ? mx : (overPop ? Widget.NO_MOUSE : mx), overPop ? Widget.NO_MOUSE : my, tooltip, vw, vh);
         palette.render(ctx, overPop && pop == palette ? mx : Widget.NO_MOUSE, overPop && pop == palette ? my : Widget.NO_MOUSE, tooltip, vw, vh);
         profiles.render(ctx, overPop && pop == profiles ? mx : Widget.NO_MOUSE, overPop && pop == profiles ? my : Widget.NO_MOUSE, tooltip, vw, vh);
@@ -309,15 +314,12 @@ public class ClickGuiScreen extends Screen {
         barY = 6;
         time += Anim.dt;
 
-        Paint.glow(ctx, barX, barY, barW, BAR_H, 6, Palette.SHADOW, 5);
-        Paint.roundGradient(ctx, barX, barY, barW, BAR_H, 6, 0xF0181818, 0xF00C0C0C);
-        Paint.outline(ctx, barX, barY, barW, BAR_H, 6, Palette.OUTLINE);
-        SettingsWindow.accentLine(ctx, barX + 6, barY + BAR_H - 1, barW - 12);
+        Paint.panel(ctx, barX, barY, barW, BAR_H);
+        SettingsWindow.accentLine(ctx, barX + 6, barY + BAR_H - 3, barW - 12);
 
         // moon + gradient title
         int moonX = barX + 13, moonY = barY + BAR_H / 2;
         float pulse = 0.5f + 0.5f * (float) Math.sin(time * 2.2f);
-        Paint.glow(ctx, moonX - 5, moonY - 5, 10, 10, 5, Palette.accentA(Math.round(70 + 60 * pulse)), 4);
         Paint.circle(ctx, moonX, moonY, 5, Theme.accentAt(0) | 0xFF000000);
         Paint.circle(ctx, moonX + 2, moonY - 1, 4, 0xFF131313);
         String name = "Vetmos";
@@ -326,7 +328,7 @@ public class ClickGuiScreen extends Screen {
             Text ch = Text.literal(String.valueOf(name.charAt(i))).formatted(Formatting.BOLD);
             int c = Theme.accentAt(i / (float) name.length()) | 0xFF000000;
             Paint.text(ctx, ch, tx, barY + 7, Anim.mix(c, 0xFFFFFFFF, pulse * 0.15f));
-            tx += Paint.font().getWidth(ch);
+            tx += Paint.width(ch);
         }
         int titleEnd = tx + 10;
 
@@ -349,7 +351,7 @@ public class ClickGuiScreen extends Screen {
         int pc = paletteBtn.x + paletteBtn.w / 2, pcy = paletteBtn.y + paletteBtn.h / 2;
         Paint.circle(ctx, pc, pcy, 4, Theme.accentAt(0.2f) | 0xFF000000);
         Paint.circle(ctx, pc + 1, pcy + 1, 2, Theme.accentAt(0.7f) | 0xFF000000);
-        Paint.outline(ctx, pc - 4, pcy - 4, 8, 8, 4, 0x60FFFFFF);
+        Paint.ring(ctx, pc, pcy, 4, 0x60FFFFFF);
 
         // search between the title and the buttons
         int right = profileBtn.x - 6;
@@ -586,7 +588,7 @@ public class ClickGuiScreen extends Screen {
             hover = Anim.approach(hover, hovered || active.getAsBoolean() ? 1 : 0, 16);
             flash = Anim.approach(flash, 0, 6);
             ButtonWidget.draw(ctx, x, y, w, h, label.get(), hover, flash);
-            if (active.getAsBoolean()) Paint.outline(ctx, x, y, w, h, 3, Palette.accent());
+            if (active.getAsBoolean()) Paint.rect(ctx, x, y + h - 2, w, 2, Palette.accent());
         }
 
         boolean click(double mx, double my, int button) {
