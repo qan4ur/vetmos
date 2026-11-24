@@ -65,6 +65,24 @@ public class VetmosSmokeTest implements FabricClientGameTest {
             float normalFov = context.computeOnClient(client -> fov(client));
             if (!(zoomFov < normalFov * 0.6f)) throw new AssertionError("Zoom did not zoom: fov " + zoomFov + " vs " + normalFov);
 
+            // Clickable coordinates in chat
+            String linked = context.computeOnClient(client -> {
+                net.minecraft.text.Text t = io.github.qan4ur.vetmos.util.ChatCoords.link(net.minecraft.text.Text.literal("база на -515 64 -515 жду"));
+                String[] found = { null };
+                t.visit((style, str) -> {
+                    if (style.getClickEvent() instanceof net.minecraft.text.ClickEvent.CopyToClipboard c) found[0] = c.value();
+                    return java.util.Optional.empty();
+                }, net.minecraft.text.Style.EMPTY);
+                return found[0];
+            });
+            if (!"-515 64 -515".equals(linked)) throw new AssertionError("Coords not linked: " + linked);
+            sp.getServer().runCommand("say Корды базы: -515 64 -515");
+            context.waitTicks(5);
+            context.setScreen(() -> new net.minecraft.client.gui.screen.ChatScreen(""));
+            context.waitTicks(10);
+            context.takeScreenshot("vetmos-1c-chat-coords");
+            context.setScreen(() -> null);
+
             sp.getServer().runCommand("damage @p 13 minecraft:generic");
             context.waitTicks(30);
             context.takeScreenshot("vetmos-2-low-hp");

@@ -7,6 +7,7 @@ final class LangEnMacros {
     static void register() {
         Lang.en("interface.custom-font", "Clean font");
         Lang.en("interface.custom-font#desc", "Modern font (Fira Sans) in the Vetmos menus instead of the pixel Minecraft font.");
+        Lang.en("ui:coords-copy", "Click to copy the coordinates");
         Lang.en("macros", "Macros");
         Lang.en("macros#desc", "Key binds that send a chat message, a /command or a Vetmos command. Each macro has its own cooldown.");
         Lang.en("macros.cooldown-message", "Cooldown message");
