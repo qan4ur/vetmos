@@ -5,6 +5,7 @@ public enum Category {
     HUD("HUD"),
     RENDER("Рендер"),
     WORLD("Мир"),
+    INVENTORY("Инвентарь"),
     CLIENT("Клиент");
 
     public final String title;

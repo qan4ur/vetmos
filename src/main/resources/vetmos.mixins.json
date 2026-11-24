@@ -11,6 +11,7 @@
     "GlintTextureManagerMixin",
     "HitColorOverlayAccessor",
     "HitboxesEntityRenderDispatcherMixin",
+    "InventoryHandledScreenMixin",
     "KeyboardMixin",
     "KeystrokesMouseMixin",
     "LowFireOverlayMixin",

@@ -51,6 +51,10 @@ public final class Modules {
         ModuleManager.register(new Zoom());
         ModuleManager.register(new Hitboxes());
 
+        // Инвентарь
+        ModuleManager.register(new io.github.qan4ur.vetmos.modules.inventory.InventorySort());
+        ModuleManager.register(new io.github.qan4ur.vetmos.modules.inventory.ShiftDrag());
+
         // Клиент
         ModuleManager.register(new io.github.qan4ur.vetmos.modules.client.InterfaceModule());
         ModuleManager.register(new io.github.qan4ur.vetmos.modules.client.ChatTweaks());
